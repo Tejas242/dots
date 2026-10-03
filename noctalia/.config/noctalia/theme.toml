@@ -1,0 +1,51 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  theme.toml — Palette, mode, and app-theming templates     ║
+# ║  Controls colors + renders config files for other apps     ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+# ── Theme source ─────────────────────────────────────────────
+[theme]
+mode              = "dark"
+source            = "wallpaper"
+wallpaper_scheme  = "m3-fruit-salad"
+builtin           = "Noctalia"
+community_palette = "Oxocarbon"
+pure_black_dark   = false
+
+    # ── Built-in template engines ────────────────────────────
+    [theme.templates]
+    enable_builtin_templates    = true
+    enable_community_templates  = true
+
+    # ── User templates ───────────────────────────────────────
+    # VS Code Insiders color theme
+    [theme.templates.user.vscode-insiders]
+    input_path  = "~/.config/noctalia/templates/vscode-insiders.json"
+    output_path = "~/.vscode-insiders/extensions/noctalia.noctaliatheme-0.0.5/themes/NoctaliaTheme-color-theme.json"
+
+    # Neovim base16 colors (live-reloads via SIGUSR1)
+    [theme.templates.user.nvim-base16]
+    input_path  = "~/.config/nvim/lua/matugen-template.lua"
+    output_path = "~/.config/nvim/lua/matugen.lua"
+    post_hook   = "pkill -SIGUSR1 nvim"
+
+
+# ── Wallpaper ────────────────────────────────────────────────
+[wallpaper]
+enabled   = true
+directory = "/home/screenager/Pictures/Wallpapers/aesthetic-wallpapers-main/images"
+fill_mode = "crop"
+
+transition          = ["fade", "wipe", "disc", "stripes", "honeycomb"]
+transition_duration = 1500.0
+transition_on_startup = false
+edge_smoothness     = 0.3
+
+    [wallpaper.automation]
+    enabled          = false
+    interval_seconds = 1800
+    order            = "random"
+    recursive        = true
+
+    [wallpaper.default]
+    path = "/home/screenager/Pictures/Wallpapers/aesthetic-wallpapers-main/images/anime-chick.jpg"

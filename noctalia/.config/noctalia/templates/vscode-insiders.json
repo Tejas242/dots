@@ -1,0 +1,27 @@
+{
+    "workbench.colorCustomizations": {
+        "activityBar.activeBorder": "{{ mPrimary }}",
+        "activityBar.background": "{{ mSurface }}",
+        "activityBar.foreground": "{{ mOnSurface }}",
+        "activityBar.inactiveForeground": "{{ mOnSurfaceVariant }}",
+        "editor.background": "{{ mSurface }}",
+        "editor.foreground": "{{ mOnSurface }}",
+        "editorGroupHeader.tabsBackground": "{{ mSurfaceVariant }}",
+        "editorLineNumber.activeForeground": "{{ mPrimary }}",
+        "editorLineNumber.foreground": "{{ mOutline }}",
+        "list.activeSelectionBackground": "{{ mPrimary }}",
+        "list.activeSelectionForeground": "{{ mOnPrimary }}",
+        "list.hoverBackground": "{{ mHover }}",
+        "sideBar.background": "{{ mSurfaceVariant }}",
+        "sideBar.foreground": "{{ mOnSurface }}",
+        "sideBarSectionHeader.background": "{{ mSurfaceVariant }}",
+        "statusBar.background": "{{ mPrimary }}",
+        "statusBar.foreground": "{{ mOnPrimary }}",
+        "tab.activeBackground": "{{ mSurface }}",
+        "tab.activeForeground": "{{ mPrimary }}",
+        "tab.inactiveBackground": "{{ mSurfaceVariant }}",
+        "tab.inactiveForeground": "{{ mOnSurfaceVariant }}",
+        "titleBar.activeBackground": "{{ mSurface }}",
+        "titleBar.activeForeground": "{{ mOnSurface }}"
+    }
+}

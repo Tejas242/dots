@@ -1,0 +1,118 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  shell.toml — Shell UI, panels, launcher, session          ║
+# ║  Controls fonts, panel behavior, and overlay positions     ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+# ── Global UI scaling ────────────────────────────────────────
+# 1366×768 makes default panels feel oversized.
+# 0.88 brings settings/panels/dialogs down to a comfortable size
+# without making text unreadable.
+[accessibility]
+ui_scale = 0.88
+
+
+# ── Shell ────────────────────────────────────────────────────
+[shell]
+font_family          = "Roboto"
+time_format          = "{:%I:%M %p}"
+date_format          = "%A, %x"
+clipboard_enabled    = true
+telemetry_enabled    = false
+settings_show_advanced = true
+
+    # ── Animation ────────────────────────────────────────────
+    [shell.animation]
+    enabled = true
+    speed   = 1.5           # snappy, not sluggish
+
+    # ── Panels (control-center, launcher, session, etc.) ─────
+    [shell.panel]
+    transparency_mode      = "solid"
+    borders                = true
+    shadow                 = true
+    floating_offset        = 6
+
+    # Panels attach to bar edge for a tight, integrated look
+    control_center_placement = "attached"
+    control_center_position  = "auto"
+    session_placement        = "attached"
+    session_position         = "auto"
+    wallpaper_placement      = "attached"
+    wallpaper_position       = "auto"
+
+    # Launcher floats centered — it's a spotlight-style overlay
+    launcher_placement       = "floating"
+    launcher_position        = "center"
+
+    # ── Launcher ─────────────────────────────────────────────
+    [shell.launcher]
+    sort_by_usage  = true
+    categories     = true
+    show_icons     = true
+    compact        = true       # tighter list rows on small screen
+
+    # ── Session menu ─────────────────────────────────────────
+    [shell.session]
+    grid         = false        # vertical list, not grid
+    grid_columns = 3
+
+        [[shell.session.actions]]
+        action = "lock"
+        enabled = true
+        shortcut = "1"
+
+        [[shell.session.actions]]
+        action = "logout"
+        enabled = true
+        shortcut = "2"
+
+        [[shell.session.actions]]
+        action = "lock_and_suspend"
+        enabled = true
+        shortcut = "3"
+
+        [[shell.session.actions]]
+        action = "reboot"
+        enabled = true
+        shortcut = "4"
+
+        [[shell.session.actions]]
+        action = "shutdown"
+        enabled = true
+        shortcut = "5"
+        variant = "destructive"
+
+    # ── Shadow ───────────────────────────────────────────────
+    [shell.shadow]
+    alpha     = 0.4
+    direction = "down"
+
+    # ── Screen corners ───────────────────────────────────────
+    [shell.screen_corners]
+    enabled = false
+
+
+# ── Control Center ───────────────────────────────────────────
+# Narrower than default (700→560) so it doesn't eat half the screen
+[control_center]
+sidebar         = "compact"
+sidebar_section = "compact"
+width           = 560
+
+    [[control_center.shortcuts]]
+    type = "wifi"
+
+    [[control_center.shortcuts]]
+    type = "bluetooth"
+
+    [[control_center.shortcuts]]
+    type = "caffeine"
+
+    [[control_center.shortcuts]]
+    type = "nightlight"
+
+    [[control_center.shortcuts]]
+    type = "notification"
+
+    [[control_center.shortcuts]]
+    type = "power_profile"

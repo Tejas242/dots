@@ -1,0 +1,63 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  bar.toml — Bar appearance and widget arrangement          ║
+# ║  Optimized for 1366×768 · edge-to-edge · compact density   ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+[bar]
+order = ["default"]
+
+    [bar.default]
+    enabled  = true
+    position = "top"
+
+    # ── Geometry ─────────────────────────────────────────────
+    # 28px is the sweet spot on 768p: room for 14px icons + text
+    # without eating into workspace. Zero margins = flush to edges.
+    thickness      = 28
+    padding        = 6
+    widget_spacing = 6
+    margin_edge          = 0      # flush to top screen edge
+    margin_ends          = 0      # flush to left/right screen edges
+    margin_opposite_edge = 0
+
+    # ── Corners & Edges ──────────────────────────────────────
+    # All zero = seamless bar welded to the top edge
+    radius              = 0
+    radius_top_left     = 0
+    radius_top_right    = 0
+    radius_bottom_left  = 0
+    radius_bottom_right = 0
+    concave_edge_corners = false
+
+    # ── Surface ──────────────────────────────────────────────
+    background_opacity = 0.65     # let blur show through — macOS menu bar sits ~0.60–0.70
+    border             = "outline"
+    border_width       = 0.0      # effectively invisible
+    shadow             = false
+    contact_shadow     = false
+    capsule            = false
+
+    # ── Behavior ─────────────────────────────────────────────
+    font_weight    = 500          # medium — clean, not shouty
+    scale          = 1.0
+    layer          = "top"
+    reserve_space  = true
+    auto_hide      = false
+    hover_highlight = true
+    show_on_workspace_switch = true
+    panel_overlap  = 1
+
+    # ── Widget layout ────────────────────────────────────────
+    #
+    #  ┌─ LEFT ──────────────┬─── CENTER ───┬──────────── RIGHT ─┐
+    #  │ 🔍 ⟡ ⟡ ⟡  ◀ title │   1  2  3  4 │ ♫  ▣  ⚡ 🔊 🔋 ⚙  │
+    #  │ launcher+workspaces │   (clock)    │ status cluster     │
+    #  └─────────────────────┴──────────────┴────────────────────┘
+    #
+    #  Left  = navigation (launcher → workspaces → active window)
+    #  Center = clock (the thing you glance at most)
+    #  Right  = status & controls (info flows toward the exit point)
+
+    start  = ["launcher", "workspaces", "active_window"]
+    center = ["time"]
+    end    = ["media", "tray", "cpu", "ram", "network", "output_volume", "battery", "control-center"]

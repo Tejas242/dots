@@ -1,0 +1,128 @@
+// ─────────────────────────── Nocturne overlay for niri ───────────────────────────
+// Loaded after the rest of the config, so everything here overrides earlier
+// settings. Remove the include line to get the old behaviour back.
+// Budget: Ryzen 3 3250U / Vega 3. Everything here is a tiny fragment shader or
+// a spring; no extra blur passes, no full-screen effects.
+
+animations {
+    // Slightly under-damped springs: motion settles with a soft, quick "land".
+    workspace-switch         { spring damping-ratio=0.86 stiffness=720 epsilon=0.0001; }
+    horizontal-view-movement { spring damping-ratio=0.90 stiffness=760 epsilon=0.0001; }
+    window-movement          { spring damping-ratio=0.82 stiffness=680 epsilon=0.0001; }
+    window-resize            { spring damping-ratio=0.90 stiffness=820 epsilon=0.0001; }
+    overview-open-close      { spring damping-ratio=0.86 stiffness=760 epsilon=0.0001; }
+    config-notification-open-close { spring damping-ratio=0.6 stiffness=1100 epsilon=0.001; }
+
+    // Open: the window grows out of a small rounded pill (shape morph pill -> card),
+    // rising a few pixels, with its corner radius easing from fully round to 12px.
+    window-open {
+        duration-ms 360
+        curve "linear"
+        custom-shader r"
+            float sd_round_box(vec2 p, vec2 half_size, float r) {
+                vec2 q = abs(p) - half_size + r;
+                return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+            }
+
+            vec4 open_color(vec3 coords_geo, vec3 size_geo) {
+                float p = niri_clamped_progress;
+                float e = 1.0 - pow(1.0 - p, 4.0);            // ease-out-quart
+
+                vec2 size = size_geo.xy;
+                vec2 px = coords_geo.xy * size;
+                px.y -= (1.0 - e) * 28.0;                      // rise into place
+
+                vec2 full_half = size * 0.5;
+                vec2 start_half = vec2(min(full_half.x * 0.30, 120.0), min(full_half.y * 0.10, 22.0));
+                vec2 half_size = mix(start_half, full_half, e);
+                float radius = mix(min(start_half.x, start_half.y), 6.0, e);
+
+                // content scales from 92% so it feels like it inflates with the shape
+                float scale = mix(0.92, 1.0, e);
+                vec2 uv = (px - full_half) / scale + full_half;
+                vec3 coords_tex = niri_geo_to_tex * vec3(uv / size, 1.0);
+                vec4 color = texture2D(niri_tex, coords_tex.st);
+
+                float d = sd_round_box(px - full_half, half_size, radius);
+                float mask = clamp(0.5 - d, 0.0, 1.0);
+                return color * mask * smoothstep(0.0, 0.45, p);
+            }
+        "
+    }
+
+    // Close: CRT power-off. The window squashes into a bright horizontal line,
+    // then the line pinches to nothing.
+    window-close {
+        duration-ms 320
+        curve "linear"
+        custom-shader r"
+            vec4 close_color(vec3 coords_geo, vec3 size_geo) {
+                float p = niri_clamped_progress;
+                float squash = smoothstep(0.0, 0.55, p);
+                float pinch = smoothstep(0.50, 1.0, p);
+
+                vec2 size = size_geo.xy;
+                vec2 c = coords_geo.xy * size - size * 0.5;
+                float half_h = mix(size.y * 0.5, 1.2, squash);
+                float half_w = mix(size.x * 0.5, 0.0, pinch);
+                if (abs(c.y) > half_h + 0.5 || abs(c.x) > half_w + 0.5)
+                    return vec4(0.0);
+
+                vec2 src = vec2(c.x, c.y * (size.y * 0.5) / max(half_h, 0.001)) + size * 0.5;
+                vec3 coords_tex = niri_geo_to_tex * vec3(src / size, 1.0);
+                vec4 color = texture2D(niri_tex, coords_tex.st);
+
+                // flare towards white as it flattens (premultiplied: white = alpha)
+                color.rgb = mix(color.rgb, vec3(color.a), squash * 0.85);
+                float edge = clamp(half_w + 0.5 - abs(c.x), 0.0, 1.0);
+                return color * edge * (1.0 - pinch * 0.6);
+            }
+        "
+    }
+}
+
+layout {
+    // Compact: keep the 4px gaps. The 1px focus ring is drawn outside the window
+    // and takes no layout space (a border would); it just gets a gradient that
+    // flows across the workspace as windows move.
+    gaps 4
+    focus-ring {
+        on
+        width 1
+        active-gradient from="#72dd71" to="#8fd3c8" angle=135 relative-to="workspace-view"
+        inactive-color "#00000000"
+        urgent-color "#ffb4ab"
+    }
+    border { off; }
+    shadow { off; }
+}
+
+overview {
+    zoom 0.46
+    backdrop-color "#080c09"
+    workspace-shadow {
+        softness 36
+        spread 4
+        offset x=0 y=12
+        color "#00000080"
+    }
+}
+
+// Subtle 6px rounding (overrides the radius-0 rule); costs no space.
+window-rule {
+    geometry-corner-radius 6
+    clip-to-geometry true
+}
+
+// Blur only what is actually see-through. Blurring behind opaque windows (browsers,
+// editors) costs GPU passes that are never visible.
+window-rule {
+    background-effect { blur false; }
+}
+window-rule {
+    match app-id=r#"^(Alacritty|kitty|com\.mitchellh\.ghostty|foot)$"#
+    background-effect {
+        blur true
+        xray false
+    }
+}

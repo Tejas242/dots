@@ -1,0 +1,45 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  widgets.toml — Per-widget tuning                          ║
+# ║  Each [widget.<id>] customizes a bar widget.               ║
+# ║  Only widgets that need non-default values are listed.     ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+# ── Clock ────────────────────────────────────────────────────
+# Centered in the bar. Compact 12h format without seconds.
+[widget.time]
+type   = "clock"
+format = "{:%I:%M %p}"
+
+
+# ── Active Window ────────────────────────────────────────────
+# Shows what's focused. Truncated to ~180px so it never pushes
+# workspaces off-center on a 1366px screen.
+[widget.active_window]
+type         = "active_window"
+icon_size    = 14.0
+max_length   = 180.0
+min_length   = 40.0
+title_scroll = "on_hover"
+
+
+# ── Media (MPRIS) ───────────────────────────────────────────
+# Compact now-playing. Art kept small; title scrolls on hover
+# so it doesn't steal space from the status cluster.
+[widget.media]
+type         = "media"
+art_size     = 14.0
+max_length   = 160.0
+min_length   = 40.0
+title_scroll = "on_hover"
+
+
+# ── System Monitor ──────────────────────────────────────────
+# Two compact stats: CPU% and RAM%. Enough for a quick health
+# check without opening btop. Temp removed to save bar space.
+[widget.cpu]
+type = "sysmon"
+stat = "cpu_usage"
+
+[widget.ram]
+type = "sysmon"
+stat = "ram_used"

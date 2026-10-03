@@ -1,0 +1,76 @@
+    window-rule {
+        geometry-corner-radius 0 // Set every window radius to 0
+        clip-to-geometry true
+    }
+
+    window-rule {
+        match app-id=r#"^zen(-.*)?$"# title="^Picture-in-Picture$"
+        open-floating true
+        default-floating-position x=32 y=32 relative-to="bottom-right"
+    }
+
+    window-rule {
+        match app-id="zen" // Use 'niri msg windows' to confirm the exact app-id
+        open-maximized true
+    }
+
+    window-rule {
+        match app-id="code-insiders"
+        open-maximized true
+    }
+
+window-rule {
+    match app-id="antigravity"
+    open-maximized true
+}
+
+    window-rule {
+        match app-id="brave-browser"
+        open-maximized true
+    }
+
+    window-rule {
+        match title="^Picture in Picture$"
+        open-floating true
+        default-floating-position x=32 y=32 relative-to="bottom-right"
+    }
+
+    window-rule {
+    match title="Sticky Note"
+    open-floating true
+    default-floating-position x=32 y=32 relative-to="bottom-right"
+}
+
+layer-rule {
+  match namespace="^noctalia-backdrop"
+  place-within-backdrop true
+}
+
+/* Apps: blur them all without xray so it looks more realistic. */
+window-rule {
+  background-effect {
+    blur true
+    xray false
+  }
+}
+
+/*
+  Noctalia
+  Disable xray on all our surfaces so it looks more realistic.
+  Noctalia publishes blur regions automatically when ext-background-effects is available.
+*/
+layer-rule {
+  match namespace="^noctalia-(bar-[^\"]+|notification|dock|panel|attached-panel|osd)$"
+  background-effect {
+    blur true          // frosted glass — macOS Sequoia-style
+    xray false         // no xray: blur only, no content bleeding
+  }
+}
+
+blur {
+  passes 2
+  offset 4.5
+  noise 0.02
+  saturation 1.3
+}
+

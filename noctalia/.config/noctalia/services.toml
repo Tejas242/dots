@@ -1,0 +1,78 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  services.toml — Notifications, OSD, idle, nightlight      ║
+# ║  Background services and their on-screen overlays          ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+# ── Notifications ────────────────────────────────────────────
+[notification]
+enable_daemon      = true
+position           = "top_right"
+offset_x           = 8
+offset_y           = 36          # clear the 28px bar + 8px gap
+scale              = 0.9         # slightly smaller toasts on 768p
+background_opacity = 0.95
+border             = true
+layer              = "top"
+show_app_name      = true
+show_actions       = true
+
+
+# ── OSD (volume/brightness popups) ───────────────────────────
+[osd]
+position           = "top_center"
+orientation        = "horizontal"
+offset_x           = 0
+offset_y           = 36
+scale              = 0.9
+background_opacity = 0.95
+border             = true
+
+
+# ── Night Light ──────────────────────────────────────────────
+[nightlight]
+enabled           = false
+temperature_day   = 6500
+temperature_night = 4000
+
+
+# ── Idle ─────────────────────────────────────────────────────
+[idle]
+behavior_order = ["lock", "screen-off", "lock-and-suspend"]
+
+    [idle.behavior.lock]
+    action  = "lock"
+    enabled = true
+    timeout = 600.0           # 10 min
+
+    [idle.behavior.screen-off]
+    action  = "screen_off"
+    enabled = true
+    timeout = 660.0           # 11 min
+
+    [idle.behavior.lock-and-suspend]
+    action  = "lock_and_suspend"
+    enabled = true
+    timeout = 1800.0          # 30 min
+
+
+# ── Location ─────────────────────────────────────────────────
+[location]
+address     = ""
+auto_locate = true
+
+
+# ── Weather ──────────────────────────────────────────────────
+[weather]
+enabled         = true
+effects         = true
+unit            = "metric"
+refresh_minutes = 30
+
+
+# ── System Monitor thresholds ────────────────────────────────
+[system.monitor]
+enabled                  = true
+cpu_poll_seconds         = 2.0
+memory_poll_seconds      = 2.0
+cpu_usage_critical_threshold = 90.0
+ram_pct_critical_threshold   = 90.0

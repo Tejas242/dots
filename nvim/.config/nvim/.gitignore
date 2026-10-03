@@ -1,0 +1,6 @@
+# Editor and operating-system artefacts
+*.log
+.DS_Store
+
+# Local project overrides; keep the shared configuration reproducible.
+.lazy.lua

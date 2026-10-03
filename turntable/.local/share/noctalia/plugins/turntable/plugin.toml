@@ -1,0 +1,59 @@
+id           = "screenager/turntable"
+name         = "Turntable"
+version      = "1.0.0"
+plugin_api   = 32
+author       = "screenager"
+license      = "MIT"
+icon         = "vinyl"
+description  = "A spinning vinyl record that plays your current track's album art, with a swinging tonearm. Built for the lock screen."
+dependencies = ["busctl", "python3"]
+tags         = ["media", "desktop", "lockscreen"]
+
+[[desktop_widget]]
+id    = "record"
+entry = "turntable.luau"
+
+  [[desktop_widget.setting]]
+  key     = "show_info"
+  type    = "bool"
+  label_key = "settings.show_info"
+  default = true
+
+  [[desktop_widget.setting]]
+  key     = "accent"
+  type    = "string"
+  label_key = "settings.accent"
+  default = "primary"
+
+[[widget]]
+id    = "disc"
+entry = "disc.luau"
+
+  [widget.actions]
+  left   = "media toggle"
+  right  = "media next"
+  middle = "media previous"
+
+  [[widget.setting]]
+  key       = "size"
+  type      = "int"
+  label_key = "settings.size"
+  default   = 15
+  min       = 10
+  max       = 32
+
+[[desktop_widget]]
+id    = "clock"
+entry = "clock.luau"
+
+  [[desktop_widget.setting]]
+  key       = "greeting"
+  type      = "string"
+  label_key = "settings.greeting"
+  default   = "welcome back, screenager"
+
+  [[desktop_widget.setting]]
+  key       = "accent"
+  type      = "string"
+  label_key = "settings.accent"
+  default   = "primary"
