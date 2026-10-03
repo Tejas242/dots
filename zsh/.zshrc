@@ -16,8 +16,6 @@ export NVM_DIR="$HOME/.nvm"
 
 . "$HOME/.local/bin/env"
 
-eval "$(zoxide init zsh)"
-
 unsetopt correct_all
 unsetopt correct
 

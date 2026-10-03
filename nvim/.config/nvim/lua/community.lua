@@ -11,6 +11,9 @@ return {
 
   -- Language packs
   { import = "astrocommunity.pack.go" },
+  -- Quieter diagnostics: the full message only on the cursor line
+  { import = "astrocommunity.recipes.diagnostic-virtual-lines-current-line" },
+
   -- C++ is configured explicitly in plugins/performance.lua. The community
   -- pack eagerly attaches a full CMake/DAP stack to every standalone .cpp
   -- file, which is the wrong trade-off for contest work.

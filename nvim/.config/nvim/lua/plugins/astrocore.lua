@@ -23,19 +23,6 @@ return {
       underline = true,
     },
     -- passed to `vim.filetype.add`
-    filetypes = {
-      -- see `:h vim.filetype.add` for usage
-      extension = {
-        foo = "fooscript",
-      },
-      filename = {
-        [".foorc"] = "fooscript",
-      },
-      pattern = {
-        [".*/etc/foo/.*"] = "fooscript",
-      },
-    },
-    -- vim options can be configured here
     options = {
       opt = { -- vim.opt.<key>
         relativenumber = false, -- sets vim.opt.relativenumber
@@ -44,6 +31,11 @@ return {
         signcolumn = "yes", -- sets vim.opt.signcolumn to yes
         wrap = false, -- enable wrapping only for prose-oriented filetypes
         tabstop = 2, -- sets vim.opt.tabstop to 2 spaces
+        winborder = "rounded", -- every float (hover, signature, pickers) gets the same soft frame
+        scrolloff = 6, -- keep context around the cursor
+        sidescrolloff = 8,
+        pumheight = 12, -- completion menu never takes over the screen
+        fillchars = { eob = " ", fold = " ", foldsep = " ", foldopen = "▾", foldclose = "▸" },
       },
       g = { -- vim.g.<key>
         -- configure global vim variables (vim.g)

@@ -7,7 +7,6 @@
   "astrolsp": { "branch": "main", "commit": "0ca1ed9a2536c9eaf78d5f3e7b92bda0dbd404eb" },
   "astrotheme": { "branch": "main", "commit": "744e520fcb300980a4e5ea32c508128c790ecc73" },
   "astroui": { "branch": "main", "commit": "9a797715484a6e68fc32bdd4c81cb1246f72139f" },
-  "base16-nvim": { "branch": "master", "commit": "09944b3120451d2881dc8cfb13c85c11949f477d" },
   "blink.cmp": { "branch": "main", "commit": "78336bc89ee5365633bcf754d93df01678b5c08f" },
   "blink.compat": { "branch": "main", "commit": "2ed6d9a28b07fa6f3bface818470605f8896408c" },
   "cmake-tools.nvim": { "branch": "master", "commit": "ee807ac4e62591720de2f6ad0abbfb966c4c7b97" },
