@@ -16,7 +16,10 @@ local function apply_matugen_palette()
     return
   end
   matugen.setup()
+  require("nocturne").apply() -- keep the desktop-matched chrome on top of the new palette
 end
+
+require("nocturne").setup()
 
 M.matugen_signal = assert((vim.uv or vim.loop).new_signal())
 M.matugen_signal:start("sigusr1", vim.schedule_wrap(apply_matugen_palette))

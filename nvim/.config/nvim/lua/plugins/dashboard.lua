@@ -1,10 +1,16 @@
--- A quiet, responsive start screen. The original Screenager mark stays central;
--- the supporting content appears only when the terminal has room for it.
-local logo = table.concat({
+-- Nocturne start screen. The original Screenager mark stays central; it now
+-- carries the desktop palette as a gradient and a light sweeps across it once
+-- when the screen opens. Supporting content appears only when there is room.
+--
+-- Motion is done by re-colouring highlight groups (one per logo column chunk)
+-- on a short timer, so the buffer is never re-rendered while it animates.
+local logo = {
   "╔═╗╔═╗╦═╗╔═╗╔═╗╔╗╔╔═╗╔═╗╔═╗╦═╗",
   "╚═╗║  ╠╦╝║╣ ║╣ ║║║╠═╣║ ╦║╣ ╠╦╝",
   "╚═╝╚═╝╩╚═╚═╝╚═╝╝╚╝╩ ╩╚═╝╚═╝╩╚═",
-}, "\n")
+}
+local CHUNK = 3 -- columns per gradient step
+local CHUNKS = math.ceil(vim.fn.strchars(logo[1]) / CHUNK)
 
 -- The deck is shuffled once per cycle. A greeting is held for the lifetime of
 -- a dashboard buffer, so resizing does not change it underneath the user.
@@ -115,50 +121,145 @@ local function salutation()
   return "good evening"
 end
 
+-- ── logo: gradient + one light sweep ───────────────────────────────────────
+local function logo_colors(sweep)
+  local nocturne = require "nocturne"
+  local p = nocturne.colors or nocturne.palette()
+  for c = 1, CHUNKS do
+    local base = nocturne.mix(p.primary, p.tertiary, (c - 1) / math.max(CHUNKS - 1, 1))
+    local glow = sweep and math.exp(-((c - sweep) ^ 2) / 2.2) or 0
+    vim.api.nvim_set_hl(0, "NocturneLogo" .. c, { fg = nocturne.mix(base, "#ffffff", 0.8 * glow), bold = true })
+  end
+end
+
+local sweep_timer
+local function play_sweep()
+  if sweep_timer then sweep_timer:stop() end
+  sweep_timer = (vim.uv or vim.loop).new_timer()
+  local start = (vim.uv or vim.loop).now()
+  local DURATION = 1300
+  start = start + 180 -- let the first frame settle before the light moves
+  sweep_timer:start(0, 16, vim.schedule_wrap(function()
+    local t = math.max(0, ((vim.uv or vim.loop).now() - start) / DURATION)
+    if t >= 1 or vim.bo.filetype ~= "snacks_dashboard" then
+      sweep_timer:stop()
+      logo_colors(nil)
+      return
+    end
+    local eased = 1 - (1 - t) ^ 3
+    logo_colors(-2 + eased * (CHUNKS + 4))
+  end))
+end
+
+local function logo_section()
+  local text = {}
+  for row, line in ipairs(logo) do
+    for c = 1, CHUNKS do
+      text[#text + 1] = { vim.fn.strcharpart(line, (c - 1) * CHUNK, CHUNK), hl = "NocturneLogo" .. c }
+    end
+    if row < #logo then text[#text + 1] = { "\n" } end
+  end
+  return { align = "center", padding = 1, text = text }
+end
+
+-- ── live bits fetched off the UI thread ────────────────────────────────────
+local live = { track = nil, branch = nil }
+local nowplaying = vim.fn.expand "~/.local/share/noctalia/plugins/turntable/tools/nowplaying.sh"
+
+local function refresh_live()
+  if vim.fn.filereadable(nowplaying) == 1 then
+    vim.system({ "sh", nowplaying }, { text = true }, function(r)
+      local ok, info = pcall(vim.json.decode, r.stdout or "")
+      local track
+      if ok and type(info) == "table" and info.status == "Playing" then
+        local meta = info.metadata and info.metadata.data or {}
+        local title = meta["xesam:title"] and meta["xesam:title"].data
+        local artist = meta["xesam:artist"] and meta["xesam:artist"].data
+        if type(artist) == "table" then artist = table.concat(artist, ", ") end
+        if title and title ~= "" then track = { title = title, artist = artist or "" } end
+      end
+      live.track = track
+      vim.schedule(function() require("snacks").dashboard.update() end)
+    end)
+  end
+  vim.system({ "git", "rev-parse", "--abbrev-ref", "HEAD" }, { text = true, cwd = vim.fn.getcwd() }, function(r)
+    live.branch = r.code == 0 and vim.trim(r.stdout) or nil
+    vim.schedule(function() require("snacks").dashboard.update() end)
+  end)
+end
+
+-- ── sections ────────────────────────────────────────────────────────────────
+local RULE = string.rep("─", 12)
+
 local function greeting_section(dashboard)
   local buffer = vim.b[dashboard.buf]
   buffer.screenager_dashboard_greeting = buffer.screenager_dashboard_greeting or next_greeting()
   local user = vim.env.USER ~= "" and vim.env.USER or "screenager"
-
   return {
     align = "center",
     padding = 2,
     text = {
-      { ("%s, %s."):format(salutation(), user), hl = "title" },
-      { "\n" .. buffer.screenager_dashboard_greeting, hl = "footer" },
+      { RULE .. "  ", hl = "NocturneRule" },
+      { "◆", hl = "NocturneAccent" },
+      { "  " .. RULE, hl = "NocturneRule" },
+      { "\n\n" },
+      { ("%s, %s"):format(salutation(), user), hl = "NocturneTitle" },
+      { "  ·  ", hl = "NocturneRule" },
+      { os.date("%I:%M %p"):lower(), hl = "NocturneAccent" },
+      { "\n" .. buffer.screenager_dashboard_greeting, hl = "NocturneDim" },
     },
   }
 end
 
-local function recent_work(dashboard)
-  -- Do not crowd short terminals. This function is re-evaluated on resize.
-  if dashboard._size.width < 70 or dashboard._size.height < 28 then return end
+local function keys_section(keys)
+  return function()
+    local items = {}
+    for _, item in ipairs(keys) do
+      local label = (item.desc or ""):gsub("%s+$", ""):lower()
+      items[#items + 1] = {
+        key = item.key,
+        action = item.action,
+        align = "center",
+        text = {
+          { (item.icon or "•") .. " ", hl = "NocturneAccent", width = 3 },
+          { label, hl = "NocturneText", width = 27 },
+          { item.key, hl = "NocturneKey", width = 2, align = "right" },
+        },
+      }
+    end
+    items[#items].padding = 2
+    return items
+  end
+end
 
-  local oldfiles = require("snacks.dashboard").oldfiles()
+local function recent_work(dashboard)
+  if dashboard._size.width < 70 or dashboard._size.height < 30 then return end
   local files = {}
-  for file in oldfiles do
+  for file in require("snacks.dashboard").oldfiles() do
     files[#files + 1] = file
     if #files == 3 then break end
   end
   if #files == 0 then return end
 
-  local items = {
-    {
-      align = "center",
-      padding = 1,
-      text = { { "recent work", hl = "footer" } },
-    },
-  }
+  local items = { { align = "center", padding = 1, text = { { "recent", hl = "NocturneMuted" } } } }
+  local ok, icons = pcall(require, "mini.icons")
   for index, file in ipairs(files) do
     local path = vim.fn.fnamemodify(file, ":~")
-    if vim.api.nvim_strwidth(path) > 35 then path = vim.fn.pathshorten(path) end
+    local dir, name = vim.fn.fnamemodify(path, ":h"), vim.fn.fnamemodify(path, ":t")
+    if vim.api.nvim_strwidth(dir) > 22 then dir = vim.fn.pathshorten(dir) end
+    local icon, icon_hl = "", "NocturneMuted"
+    if ok then icon, icon_hl = icons.get("file", name) end
+    local used = vim.api.nvim_strwidth(dir .. "/" .. name)
+    if used > 27 then name, used = vim.fn.strcharpart(name, 0, 25 - vim.api.nvim_strwidth(dir)) .. "…", 27 end
     items[#items + 1] = {
+      key = tostring(index),
       action = ":edit " .. vim.fn.fnameescape(file),
       align = "center",
-      key = tostring(index),
       text = {
-        { tostring(index), align = "right", hl = "key", width = 3 },
-        { "  " .. path, align = "left", hl = "file", width = 37 },
+        { icon .. " ", hl = icon_hl, width = 3 },
+        { dir .. "/", hl = "NocturneDim" },
+        { name .. string.rep(" ", math.max(0, 27 - used)), hl = "NocturneText" },
+        { tostring(index), hl = "NocturneKey", width = 2, align = "right" },
       },
     }
   end
@@ -166,18 +267,26 @@ local function recent_work(dashboard)
   return items
 end
 
-local function startup_stats()
+local function footer()
+  local text = {}
+  if live.track then
+    text[#text + 1] = { "♪  ", hl = "NocturneAccent" }
+    text[#text + 1] = { live.track.title, hl = "NocturneText" }
+    if live.track.artist ~= "" then text[#text + 1] = { "  ·  " .. live.track.artist:lower(), hl = "NocturneMuted" } end
+    text[#text + 1] = { "\n" }
+  end
   local ok, stats = pcall(function() return require("lazy.stats").stats() end)
-  if not ok then return end
-  local milliseconds = math.floor((stats.startuptime or 0) * 100 + 0.5) / 100
-  return {
-    align = "center",
-    text = {
-      { ("%d plugins"):format(stats.loaded or 0), hl = "footer" },
-      { "  ·  ", hl = "footer" },
-      { ("%sms"):format(milliseconds), hl = "special" },
-    },
-  }
+  if ok then
+    local ms = math.floor((stats.startuptime or 0) * 10 + 0.5) / 10
+    text[#text + 1] = { ("%d plugins"):format(stats.loaded or 0), hl = "NocturneDim" }
+    text[#text + 1] = { "  ·  ", hl = "NocturneRule" }
+    text[#text + 1] = { ("%sms"):format(ms), hl = "NocturneAccent2" }
+  end
+  if live.branch then
+    text[#text + 1] = { "  ·  ", hl = "NocturneRule" }
+    text[#text + 1] = { " " .. live.branch, hl = "NocturneDim" }
+  end
+  return { align = "center", text = text }
 end
 
 ---@type LazySpec
@@ -187,28 +296,34 @@ return {
     opts = function(_, opts)
       opts.dashboard = opts.dashboard or {}
       opts.dashboard.preset = opts.dashboard.preset or {}
-
-      -- Keep AstroNvim's existing actions and keymaps; only alter their display.
       local keys = vim.deepcopy(opts.dashboard.preset.keys or {})
-      for _, item in ipairs(keys) do
-        local label = (item.desc or ""):gsub("%s+$", ""):lower()
-        item.align = "center"
-        item.text = {
-          { item.key, align = "right", hl = "key", width = 3 },
-          { "  " .. label, align = "left", hl = "desc", width = 20 },
-        }
-      end
 
-      opts.dashboard.width = 44
-      opts.dashboard.preset.header = logo
-      opts.dashboard.preset.keys = keys
+      opts.dashboard.width = 50
       opts.dashboard.sections = {
-        { section = "header", padding = 1 },
+        logo_section,
         greeting_section,
-        { section = "keys", gap = 0, padding = 1 },
+        keys_section(keys),
         recent_work,
-        startup_stats,
+        footer,
       }
+
+      -- motion: smooth scrolling and an animated indent scope (both cheap)
+      opts.scroll = { animate = { duration = { step = 12, total = 160 }, easing = "outQuad" } }
+      opts.indent = opts.indent or {}
+      opts.indent.animate = { enabled = true, style = "out", duration = { step = 18, total = 260 } }
+
+      logo_colors(nil) -- define the gradient before the first draw
+      local group = vim.api.nvim_create_augroup("nocturne_dashboard", { clear = true })
+      vim.api.nvim_create_autocmd("User", {
+        group = group,
+        pattern = "SnacksDashboardOpened",
+        callback = function()
+          logo_colors(nil)
+          play_sweep()
+          refresh_live()
+        end,
+      })
+      vim.api.nvim_create_autocmd("ColorScheme", { group = group, callback = function() logo_colors(nil) end })
     end,
   },
 }
