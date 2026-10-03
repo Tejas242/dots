@@ -79,6 +79,7 @@ function M.poll()
     M.positionUs = tonumber(info.position) or 0
     M.positionAt = noctalia.nowMs()
     M.artUrl = field(meta, "mpris:artUrl")
+    M.player = info.player
     polled = true
     for _, set in pairs(labelSets) do
       renderLabels(set)
@@ -137,6 +138,21 @@ function M.labels(key, size, frames, accent, style)
     end
     return nil
   end
+end
+
+-- Play/pause the active player. The state flips optimistically so the deck
+-- reacts on the same frame; the next poll confirms (or corrects) it.
+function M.toggle()
+  if not M.player or M.status == "None" then
+    return
+  end
+  M.status = M.status == "Playing" and "Paused" or "Playing"
+  M.positionAt = noctalia.nowMs()
+  emit()
+  noctalia.runAsync({ "busctl", "--user", "call", M.player, "/org/mpris/MediaPlayer2",
+    "org.mpris.MediaPlayer2.Player", "PlayPause" }, function()
+    pollQueued = true
+  end, 3000)
 end
 
 function M.subscribe(fn)

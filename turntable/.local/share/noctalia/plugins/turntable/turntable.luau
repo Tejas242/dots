@@ -71,7 +71,8 @@ end
 
 local function targets()
   local playing = mpris.status == "Playing"
-  local armTarget = (playing or mpris.status == "Paused") and 1 or 0
+  -- paused or stopped: the platter coasts down, then the arm lifts back to rest
+  local armTarget = playing and 1 or 0
   if intro() < 1550 then
     armTarget = 0 -- the arm waits for the record to land
   end
@@ -150,7 +151,8 @@ local function render()
     })
   end
 
-  local deck = ui.row({ gap = -BODY, align = "start" }, {
+  -- the whole deck is a play/pause button
+  local deck = ui.row({ key = "deck", gap = -BODY, align = "start", onClick = mpris.toggle }, {
     ui.column({ key = "bodyc", width = BODY, height = BODY, align = "center", justify = "center" }, {
       ui.image({ key = "body", path = "assets/body.png", width = BODY * bodyS, height = BODY * bodyS,
         opacity = bodyA }),

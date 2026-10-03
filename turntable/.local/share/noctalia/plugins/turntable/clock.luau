@@ -1,58 +1,71 @@
 --!nonstrict
--- Nocturne clock: the lock screen's time column, with motion.
+-- Nocturne clock: the lock screen's left column as one typographic block.
 --
---   intro   staggered entrance (dot, weekday, digits rise one by one, hairline
---           draws, date, then the greeting types itself out with a caret)
---   minute  only the digits that change roll: old slides up and fades while the
---           new one rises in (odometer cross-fade)
---   second  the colon breathes and the hairline under the time fills per minute
+--   ┌──────────┬─────────┐
+--   │ 09  thin │ PM      │   hours: hairline condensed display face
+--   │          │ SAT     │   minutes: the same face at its heaviest, in accent
+--   │ 58  black│ 03      │   divider: doubles as a seconds meter (fills down)
+--   │          │ OCT     │   rail: am/pm, a calendar block, a battery cell
+--   │          │ ▯ 97%   │
+--   └──────────┴─────────┘
+--   welcome back, screenager   (typed)
 --
--- No transforms exist in the plugin UI, so motion is translate (spacer offsets)
--- + opacity inside fixed-size slots: the widget's natural size never changes,
--- which keeps the lock-screen box fit stable. The timer runs at ~30 Hz only
--- while something animates (intro, rolls, the 450 ms colon fade each second).
+-- Motion: staggered intro (digits rise, divider draws, rail fades in, battery
+-- fills), per-digit odometer roll on change, and one soft beat per second
+-- (seconds meter + charging pulse). The timer only runs fast while something
+-- moves; otherwise it sleeps until the next second. No transforms exist in the
+-- plugin UI, so motion is translate (spacer offsets) + opacity inside
+-- fixed-size slots, keeping the widget's natural size constant.
 
 local DIR = noctalia.pluginDir()
-local THIN = noctalia.loadFont(DIR .. "/fonts/NocturneSansExtraLight.ttf") or "Nocturne Sans ExtraLight"
-local LIGHT = noctalia.loadFont(DIR .. "/fonts/NocturneSansLight.ttf") or "Nocturne Sans Light"
-local MONO = noctalia.loadFont(DIR .. "/fonts/NocturneMono.ttf") or "Nocturne Mono"
+local function font(file, fallback)
+  return noctalia.loadFont(DIR .. "/fonts/" .. file) or fallback
+end
+local THIN = font("NocturneDisplayLight.ttf", "Nocturne Display Light")
+local BLACK = font("NocturneDisplayBlack.ttf", "Nocturne Display Black")
+local LIGHT = font("NocturneSansLight.ttf", "Nocturne Sans Light")
+local MONO = font("NocturneMono.ttf", "Nocturne Mono")
 
 local greeting = noctalia.getConfig("greeting") or "welcome back, screenager"
 local accent = noctalia.getConfig("accent") or "primary"
 
--- layout (logical px)
-local W = 460
-local FS = 132              -- time font size
-local SLOT_W, COLON_W = 76, 34
-local SLOT_H = 158
-local ROLL = 34             -- roll travel
+-- geometry (logical px), measured from the font at FS
+local FS = 180
+local INK_TOP = 69            -- first ink row below the label top (as Noctalia lays text out)
+local INK_H = 144             -- cap height of the digits
+local ROW = 158               -- row pitch: 14 px of air between the two rows of ink
+local BLACK_W = 92            -- widest black digit, so the minutes row never reflows
+local ROLL = 30               -- odometer travel
+local DIV_X_GAP = 18
+local RAIL_W = 92
+local TIME_W = BLACK_W * 2
+local W = TIME_W + DIV_X_GAP * 2 + 1 + RAIL_W
+local DIV_H = ROW + INK_H -- hours ink top .. minutes ink bottom
+local BLOCK_H = ROW + INK_TOP + INK_H + 10
 local FAST, SLOW = 33, 1000
 
 local t0 = noctalia.nowMs()
 local lastKey = ""
-local interval = SLOW
+local interval = FAST
 
--- digit state: current text, previous text, roll start time per slot
-local digits = { {}, {}, {}, {} }
-local lastSecond = nil
-local secondAt = t0
-local seconds = 0
+-- ── state ───────────────────────────────────────────────────────────────────
+local rows = { {}, {} } -- hours, minutes: whole rows keep the font's own spacing
+local lastSecond, secondAt, seconds = nil, t0, 0
+local battery = { level = nil, status = "", eta = "" }
+local batteryAt = -1e9
+local batteryPath = nil
 
 local function clamp01(x)
   return math.clamp(x, 0, 1)
 end
-
-local function easeOutCubic(x)
+local function easeOut(x)
   x = clamp01(x)
   return 1 - (1 - x) ^ 3
 end
-
--- critically-ish damped spring step response with a little overshoot
-local function spring(x)
+local function spring(x) -- step response with a soft overshoot
   x = clamp01(x)
   return 1 - math.exp(-6 * x) * math.cos(9 * x)
 end
-
 local function phase(t, start, dur)
   return clamp01((t - start) / dur)
 end
@@ -64,138 +77,215 @@ local function setInterval(ms)
   end
 end
 
+local function readBattery(now)
+  if now - batteryAt < 30000 then
+    return
+  end
+  batteryAt = now
+  if not batteryPath then
+    for _, name in ipairs(noctalia.listDir("/sys/class/power_supply") or {}) do
+      if string.match(name, "^BAT") then
+        batteryPath = "/sys/class/power_supply/" .. name
+        break
+      end
+    end
+  end
+  if not batteryPath then
+    return
+  end
+  local function read(f)
+    local s = noctalia.readFile(batteryPath .. "/" .. f)
+    return s and noctalia.string.trim(s) or nil
+  end
+  battery.level = tonumber(read "capacity")
+  battery.status = string.lower(read "status" or "")
+  local energy, power = tonumber(read "energy_now"), tonumber(read "power_now")
+  local full = tonumber(read "energy_full")
+  battery.eta = ""
+  if energy and power and power > 0 then
+    local hours
+    if battery.status == "discharging" then
+      hours = energy / power
+    elseif battery.status == "charging" and full then
+      hours = (full - energy) / power
+    end
+    if hours and hours < 48 then
+      local h, m = math.floor(hours), math.floor((hours % 1) * 60)
+      battery.eta = h > 0 and string.format("%dh %02dm", h, m) or string.format("%dm", m)
+    end
+  end
+end
+
+local function readClock(now)
+  local values = { noctalia.formatTime "{:%I}", noctalia.formatTime "{:%M}" }
+  for i = 1, 2 do
+    local r = rows[i]
+    if r.cur == nil then
+      r.cur = values[i]
+    elseif r.cur ~= values[i] then
+      r.prev, r.cur, r.rollAt = r.cur, values[i], now
+    end
+  end
+  local s = noctalia.formatTime "{:%S}"
+  if s ~= lastSecond then
+    lastSecond, secondAt, seconds = s, now, tonumber(s) or 0
+  end
+end
+
+-- ── pieces ──────────────────────────────────────────────────────────────────
 local function shifted(dy, h, child, key)
-  -- place `child` dy px below the slot top inside a fixed-height column
   return ui.column({ key = key, height = h, align = "start" }, {
     ui.spacer({ height = math.max(0, dy) }),
     child,
   })
 end
 
-local function digitSlot(i, now, t)
-  local d = digits[i]
-  local enter = spring(phase(t, 820 + (i - 1) * 90, 700)) -- intro stagger
-  local roll = d.rollAt and easeOutCubic((now - d.rollAt) / 520) or 1
+-- one time row: the old value fades in place while the new one rises in (odometer)
+local function timeRow(i, now, t, family, color, delay)
+  local r = rows[i]
+  local enter = spring(phase(t, delay, 750))
+  local roll = r.rollAt and easeOut((now - r.rollAt) / 560) or 1
   local base = ROLL * (1 - enter)
   local layers = {}
-  if d.prev and roll < 1 then
-    layers[#layers + 1] = shifted(base + ROLL * 0.0, SLOT_H + ROLL,
-      ui.label({ text = d.prev, fontFamily = THIN, fontSize = FS, color = "on_surface",
-        width = SLOT_W, textAlign = "center", opacity = (1 - roll) * enter }), "p" .. i)
-    -- the old digit lifts away: spacer can't go negative, so the new one does the travel
+  if r.prev and roll < 1 then
+    layers[#layers + 1] = shifted(base, ROW, ui.label({ text = r.prev, fontFamily = family, fontSize = FS,
+      color = color, width = TIME_W, opacity = (1 - roll) * enter }), "p" .. i)
   end
-  layers[#layers + 1] = shifted(base + ROLL * (1 - roll), SLOT_H + ROLL,
-    ui.label({ text = d.cur or "", fontFamily = THIN, fontSize = FS, color = "on_surface",
-      width = SLOT_W, textAlign = "center", opacity = enter * (d.prev and roll or 1) }), "c" .. i)
-  return ui.row({ key = "slot" .. i, width = SLOT_W, gap = -SLOT_W, align = "start" }, layers)
+  layers[#layers + 1] = shifted(base + ROLL * (1 - roll), ROW, ui.label({ text = r.cur or "", fontFamily = family,
+    fontSize = FS, color = color, width = TIME_W,
+    opacity = enter * ((r.prev and roll < 1) and roll or 1) }), "c" .. i)
+  return ui.row({ key = "row" .. i, width = TIME_W, height = ROW, gap = -TIME_W, align = "start" }, layers)
 end
 
+local function railText(text, size, color, opacity, family, key)
+  return ui.label({ key = key, text = text, fontFamily = family or MONO, fontSize = size, color = color,
+    opacity = opacity })
+end
+
+local function batteryCell(t, now)
+  local level = battery.level or 0
+  local fillIn = easeOut(phase(t, 1500, 1100))
+  local low = level <= 20 and battery.status ~= "charging"
+  local fillColor = low and "error" or accent
+  local charging = battery.status == "charging"
+  -- charging: the top of the fill breathes once per second with the clock
+  local since = now - secondAt
+  local pulse = (charging and since < 450) and math.sin(math.pi * since / 450) or 0
+
+  local CELL_W, CELL_H, PAD = 22, 50, 3
+  local inner = CELL_H - PAD * 2
+  local fillH = math.max(inner * (level / 100) * fillIn, 0.01)
+  local cell = ui.column({ key = "battery", width = CELL_W, height = CELL_H + 4, align = "center" }, {
+    ui.box({ width = 8, height = 3, radius = 1, fill = "on_surface/0.45" }),
+    ui.spacer({ height = 1 }),
+    ui.column({ width = CELL_W, height = CELL_H, padding = PAD, radius = 5, border = "on_surface/0.45",
+      borderWidth = 1.2, justify = "end", align = "center" }, {
+      ui.box({ width = CELL_W - PAD * 2 - 2.4, height = fillH, radius = 2, fill = fillColor,
+        opacity = 0.75 + 0.25 * pulse }),
+    }),
+  })
+  local label = battery.level and string.format("%d%%", math.floor(level * fillIn + 0.5)) or "—"
+  local sub = charging and (battery.eta ~= "" and ("+" .. battery.eta) or "charging")
+    or (battery.eta ~= "" and battery.eta or battery.status)
+  return ui.row({ key = "batt", gap = 10, align = "end" }, {
+    cell,
+    ui.column({ gap = 2, align = "start" }, {
+      railText(label, 15, low and "error" or "on_surface", 1, MONO, "bl"),
+      railText(sub, 10, "on_surface_variant", 0.85, MONO, "bs"),
+    }),
+  })
+end
+
+-- ── frame ───────────────────────────────────────────────────────────────────
 local function render(now)
   local t = now - t0
-  local sinceSecond = now - secondAt
+  local since = now - secondAt
+  local divIn = easeOut(phase(t, 900, 800))
+  local secFill = (seconds + easeOut(since / 450)) / 60
+  local a = {
+    easeOut(phase(t, 1100, 500)), -- am/pm
+    easeOut(phase(t, 1200, 500)), -- weekday
+    spring(phase(t, 1300, 600)), -- day number
+    easeOut(phase(t, 1400, 500)), -- month
+    easeOut(phase(t, 1500, 600)), -- battery
+  }
+  local typed = math.floor(clamp01((t - 2100) / (30 * #greeting)) * #greeting + 0.5)
+  local caretOn = t < 2100 + 30 * #greeting + 900 and (math.floor(now / 420) % 2 == 0)
 
-  -- colon breathes: dips to 35% and back within the first 450 ms of every second
-  local breathe = sinceSecond < 450 and (0.35 + 0.65 * (1 - math.sin(math.pi * sinceSecond / 450))) or 1
-  local colonIn = easeOutCubic(phase(t, 1000, 500))
-
-  local dotIn = spring(phase(t, 550, 500))
-  local dayIn = easeOutCubic(phase(t, 630, 600))
-  local lineIn = easeOutCubic(phase(t, 1300, 700))
-  local dateIn = easeOutCubic(phase(t, 1450, 600))
-  local typed = math.floor(clamp01((t - 1800) / (32 * #greeting)) * #greeting + 0.5)
-  local caretOn = t < 1800 + 32 * #greeting + 900 and (math.floor(now / 420) % 2 == 0)
-  local secFill = (seconds + clamp01(sinceSecond / 1000)) / 60
-
-  local key = table.concat({
-    math.floor(breathe * 50), math.floor(colonIn * 50), math.floor(dotIn * 60), math.floor(dayIn * 60),
-    math.floor(lineIn * 80), math.floor(dateIn * 60), typed, tostring(caretOn), math.floor(secFill * 600),
-    digits[1].cur or "", digits[2].cur or "", digits[3].cur or "", digits[4].cur or "",
-    math.floor((digits[1].rollAt and now - digits[1].rollAt or 9999) / 33),
-    math.floor((digits[2].rollAt and now - digits[2].rollAt or 9999) / 33),
-    math.floor((digits[3].rollAt and now - digits[3].rollAt or 9999) / 33),
-    math.floor((digits[4].rollAt and now - digits[4].rollAt or 9999) / 33),
-    math.floor(t / 33) < 80 and math.floor(t / 33) or 80,
-  }, "|")
+  local q = function(x)
+    return math.floor(x * 120)
+  end
+  local key = { q(divIn), q(secFill), typed, tostring(caretOn), battery.level or -1, battery.status, battery.eta }
+  for i = 1, 5 do
+    key[#key + 1] = q(a[i])
+  end
+  for i = 1, 2 do
+    local r = rows[i]
+    key[#key + 1] = (r.cur or "") .. ":" .. math.floor((r.rollAt and now - r.rollAt or 9999) / 33)
+  end
+  key[#key + 1] = math.min(math.floor(t / 33), 120)
+  key[#key + 1] = since < 450 and math.floor(since / 33) or -1
+  key = table.concat(key, "|")
   if key == lastKey then
     return
   end
   lastKey = key
 
-  local dot = 8 * dotIn
-  local weekday = ui.row({ key = "day", height = 22, gap = 10, align = "center" }, {
-    ui.column({ width = 8, height = 8, align = "center", justify = "center" }, {
-      ui.box({ width = math.max(dot, 0.01), height = math.max(dot, 0.01), radius = dot / 2, fill = accent }),
-    }),
-    ui.row({ align = "center" }, {
-      ui.spacer({ width = 14 * (1 - dayIn) }),
-      ui.label({ text = noctalia.formatTime("{:%A}"), fontFamily = MONO, fontSize = 15, color = accent,
-        opacity = dayIn }),
-    }),
+  -- time: hours in hairline, minutes in black + accent, rows overlapping their empty descent
+  local hours = timeRow(1, now, t, THIN, "on_surface", 300)
+  local minutes = timeRow(2, now, t, BLACK, accent, 480)
+  local time = ui.column({ key = "time", width = TIME_W, height = BLOCK_H, align = "start" }, { hours, minutes })
+
+  -- divider = seconds meter: a hairline track that fills top-down
+  local trackH = DIV_H * divIn
+  local filled = trackH * secFill
+  local divider = ui.column({ key = "div", width = 1, height = BLOCK_H, align = "center" }, {
+    ui.spacer({ height = INK_TOP }),
+    ui.box({ width = 1.5, height = math.max(filled, 0.01), fill = accent }),
+    ui.box({ width = 1, height = math.max(trackH - filled, 0.01), fill = "on_surface/0.16" }),
   })
 
-  local time = ui.row({ key = "time", height = SLOT_H + ROLL, align = "start" }, {
-    digitSlot(1, now, t), digitSlot(2, now, t),
-    shifted(ROLL * (1 - colonIn), SLOT_H + ROLL,
-      ui.label({ text = ":", fontFamily = THIN, fontSize = FS, color = "on_surface", width = COLON_W,
-        textAlign = "center", opacity = colonIn * breathe }), "colon"),
-    digitSlot(3, now, t), digitSlot(4, now, t),
+  -- rail: every entry lives in a fixed-height row, so positions are exact:
+  -- the calendar hangs from the hours' top edge, the battery sits on the
+  -- minutes' baseline (cell is 54 px tall)
+  local function fixed(h, child, key)
+    return ui.row({ key = key, height = h, align = "start" }, { child })
+  end
+  local AMPM_Y, WD_Y, DAY_H, LINE = INK_TOP + 2, INK_TOP + 50, 72, 18
+  local batteryY = ROW + INK_TOP + INK_H - 54
+  local monthEnd = WD_Y + LINE + DAY_H + LINE
+  local rail = ui.column({ key = "rail", width = RAIL_W, height = BLOCK_H, align = "start", justify = "start" }, {
+    ui.spacer({ height = AMPM_Y }),
+    fixed(LINE, railText(string.upper(noctalia.formatTime "{:%p}"), 13, accent, a[1], MONO, "ampm"), "r1"),
+    ui.spacer({ height = WD_Y - AMPM_Y - LINE }),
+    fixed(LINE, railText(string.upper(noctalia.formatTime "{:%a}"), 13, "on_surface_variant", a[2], MONO, "wd"), "r2"),
+    fixed(DAY_H, shifted(10 * (1 - a[3]), DAY_H,
+      railText(noctalia.formatTime "{:%d}", 56, "on_surface", clamp01(a[3]), BLACK, "dn")), "r3"),
+    fixed(LINE, railText(string.upper(noctalia.formatTime "{:%b}"), 13, "on_surface_variant", a[4], MONO, "mo"), "r4"),
+    ui.spacer({ height = math.max(0, batteryY - monthEnd) }),
+    ui.column({ key = "battwrap", height = 54, opacity = a[5] }, { batteryCell(t, now) }),
   })
 
-  local lineW = 300 * lineIn
-  local hairline = ui.row({ key = "line", height = 2, gap = 0, align = "center" }, {
-    ui.box({ width = math.max(lineW * secFill, 0.01), height = 2, radius = 1, fill = accent }),
-    ui.box({ width = math.max(lineW * (1 - secFill), 0.01), height = 1, fill = "on_surface/0.14" }),
-  })
+  local block = ui.row({ key = "block", height = BLOCK_H, gap = DIV_X_GAP, align = "start" }, { time, divider, rail })
 
-  local date = ui.row({ key = "date", height = 20, align = "center" }, {
-    ui.label({ text = noctalia.formatTime("{:%d %B %Y}  ·  {:%p}"), fontFamily = MONO, fontSize = 15,
-      color = "on_surface_variant", opacity = dateIn }),
-  })
-
-  local shown = string.sub(greeting, 1, typed)
-  local greet = ui.row({ key = "greet", height = 24, align = "center" }, {
-    ui.label({ text = shown, fontFamily = LIGHT, fontSize = 17, color = "on_surface" }),
+  local greet = ui.row({ key = "greet", height = 26, align = "center" }, {
+    ui.label({ text = string.sub(greeting, 1, typed), fontFamily = LIGHT, fontSize = 17, color = "on_surface" }),
     ui.box({ width = 2, height = 17, fill = accent, opacity = caretOn and 0.9 or 0 }),
   })
 
-  desktopWidget.render(ui.column({ width = W, gap = 0, align = "start" }, {
-    weekday,
-    ui.spacer({ height = 2 }),
-    time,
-    ui.spacer({ height = 2 }),
-    hairline,
-    ui.spacer({ height = 14 }),
-    date,
-    ui.spacer({ height = 34 }),
+  desktopWidget.render(ui.column({ width = W, align = "start" }, {
+    block,
+    ui.spacer({ height = 12 }),
     greet,
   }))
 end
 
-local function readClock(now)
-  local hm = noctalia.formatTime("{:%I%M}")
-  for i = 1, 4 do
-    local c = string.sub(hm, i, i)
-    local d = digits[i]
-    if d.cur == nil then
-      d.cur = c
-    elseif d.cur ~= c then
-      d.prev, d.cur, d.rollAt = d.cur, c, now
-    end
-  end
-  local s = noctalia.formatTime("{:%S}")
-  if s ~= lastSecond then
-    lastSecond = s
-    secondAt = now
-    seconds = tonumber(s) or 0
-  end
-end
-
 local function animating(now)
-  if now - t0 < 1800 + 32 * #greeting + 1200 then
+  if now - t0 < 2100 + 30 * #greeting + 1300 then
     return true
   end
-  for i = 1, 4 do
-    if digits[i].rollAt and now - digits[i].rollAt < 560 then
+  for i = 1, 2 do
+    if rows[i].rollAt and now - rows[i].rollAt < 600 then
       return true
     end
   end
@@ -205,14 +295,15 @@ end
 function update()
   local now = noctalia.nowMs()
   readClock(now)
+  readBattery(now)
   render(now)
   setInterval(animating(now) and FAST or math.max(40, 1000 - (now - secondAt) + 5))
 end
 
 readClock(t0)
-for i = 1, 4 do
-  digits[i].prev, digits[i].rollAt = nil, nil
+for i = 1, 2 do
+  rows[i].prev, rows[i].rollAt = nil, nil
 end
+readBattery(t0)
 noctalia.setUpdateInterval(FAST)
-interval = FAST
 render(t0)

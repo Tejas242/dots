@@ -74,9 +74,14 @@ TIME_FONT = os.environ.get("TIME_FONT", "Nocturne Sans ExtraLight")
 X = 120
 # animated time column (Turntable plugin): weekday, rolling digits, seconds hairline,
 # date and a typed greeting; natural size 460x312, left edge at X
-add("screenager/turntable:clock", X + 230, 206 + 156, 460, 312, greeting="welcome back, screenager",
+# typographic tower (Turntable plugin): stacked hairline/black time, seconds-meter
+# divider, rail with am/pm, calendar block and battery cell, typed greeting.
+# Natural size 313x419; centred vertically on the record together with the login.
+CW, CH = 313, 419
+CTOP = RY - (CH + 14 + 52) // 2
+add("screenager/turntable:clock", X + CW / 2, CTOP + CH / 2, CW, CH, greeting="welcome back, screenager",
     accent="primary", background=False)
-add("login_box", X + 128, 548, 288, 52, wid=f"lockscreen-login-box@{OUT}", layout="compact",
+add("login_box", X + 128, CTOP + CH + 14 + 26, 288, 52, wid=f"lockscreen-login-box@{OUT}", layout="compact",
     show_login_button=False, show_unlock_hint=False, show_caps_lock=True, show_keyboard_layout=True,
     show_session_buttons=False, show_media=False, show_weather=False, input_opacity=0.35,
     input_radius=26, center_password_text=False, background_color="surface_variant",
