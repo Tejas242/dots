@@ -31,7 +31,6 @@ return {
         signcolumn = "yes", -- sets vim.opt.signcolumn to yes
         wrap = false, -- enable wrapping only for prose-oriented filetypes
         tabstop = 2, -- sets vim.opt.tabstop to 2 spaces
-        winborder = "rounded", -- every float (hover, signature, pickers) gets the same soft frame
         scrolloff = 6, -- keep context around the cursor
         sidescrolloff = 8,
         pumheight = 12, -- completion menu never takes over the screen

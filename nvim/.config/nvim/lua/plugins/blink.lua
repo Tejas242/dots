@@ -1,4 +1,4 @@
--- Completion: rounded menu, docs that appear on their own after a beat, and a
+-- Completion: docs that appear on their own after a beat, and a
 -- signature popup that stays out of the way.
 ---@type LazySpec
 return {
@@ -6,13 +6,13 @@ return {
     "saghen/blink.cmp",
     opts = {
       completion = {
-        menu = { border = "rounded", scrollbar = false },
-        documentation = { auto_show = true, auto_show_delay_ms = 250, window = { border = "rounded" } },
+        menu = { scrollbar = false },
+        documentation = { auto_show = true, auto_show_delay_ms = 250 },
         ghost_text = { enabled = true },
       },
       signature = {
         enabled = true,
-        window = { border = "rounded", show_documentation = false },
+        window = { border = "single", show_documentation = false },
       },
     },
   },
