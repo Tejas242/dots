@@ -3,6 +3,7 @@
     "show_info": "Show track info",
     "accent": "Accent color role",
     "size": "Disc size",
-    "greeting": "Greeting"
+    "greeting": "Greeting (\"auto\" follows the time of day)",
+    "name": "Name (empty uses $USER)"
   }
 }

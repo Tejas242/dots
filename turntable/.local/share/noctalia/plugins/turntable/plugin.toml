@@ -47,13 +47,37 @@ id    = "clock"
 entry = "clock.luau"
 
   [[desktop_widget.setting]]
+  key       = "accent"
+  type      = "string"
+  label_key = "settings.accent"
+  default   = "primary"
+
+[[desktop_widget]]
+id    = "login"
+entry = "login.luau"
+
+  [[desktop_widget.setting]]
   key       = "greeting"
   type      = "string"
   label_key = "settings.greeting"
-  default   = "welcome back, screenager"
+  default   = "auto"
+
+  [[desktop_widget.setting]]
+  key       = "name"
+  type      = "string"
+  label_key = "settings.name"
+  default   = ""
+
+[[desktop_widget]]
+id    = "battery"
+entry = "battery.luau"
 
   [[desktop_widget.setting]]
   key       = "accent"
   type      = "string"
   label_key = "settings.accent"
   default   = "primary"
+
+[[desktop_widget]]
+id    = "path"
+entry = "path.luau"

@@ -23,8 +23,9 @@ local FAST, SLOW = 33, 1000
 local showInfo = noctalia.getConfig("show_info") ~= false
 local accent = noctalia.getConfig("accent") or "primary"
 
-local sans = noctalia.loadFont(DIR .. "/fonts/NocturneSansLight.ttf") or "Nocturne Sans Light"
-local mono = noctalia.loadFont(DIR .. "/fonts/NocturneMono.ttf") or "Nocturne Mono"
+-- screenager.dev's type: Figtree for the title, JetBrains Mono for the byline
+local sans = noctalia.loadFont(DIR .. "/fonts/SiteFigtreeMedium.ttf") or "Site Figtree Medium"
+local mono = noctalia.loadFont(DIR .. "/fonts/SiteJetBrainsMono.ttf") or "Site JetBrains Mono"
 
 local labelDir = mpris.labels("lock", LABEL, FRAMES, accent)
 
@@ -151,14 +152,19 @@ local function render()
     })
   end
 
-  -- the whole deck is a play/pause button
-  local deck = ui.row({ key = "deck", gap = -BODY, align = "start", onClick = mpris.toggle }, {
+  local deck = ui.row({ key = "deck", gap = -BODY, align = "start" }, {
     ui.column({ key = "bodyc", width = BODY, height = BODY, align = "center", justify = "center" }, {
       ui.image({ key = "body", path = "assets/body.png", width = BODY * bodyS, height = BODY * bodyS,
         opacity = bodyA }),
     }),
     ui.column({ key = "label", width = BODY, height = BODY, align = "center", justify = "center" }, {
       ui.row({ gap = -((not dir) and LABEL or math.max(LABEL * labelS, 1)) }, labels),
+    }),
+    -- the record is a play/pause button. onClick names a global (rows can't take
+    -- clicks); this layer must precede the arm, which is wider than BODY
+    ui.column({ key = "hit", width = BODY, height = BODY, align = "center", justify = "center" }, {
+      ui.box({ width = BODY * 0.9, height = BODY * 0.9, radius = BODY * 0.45, fill = "surface/0",
+        onClick = "onDeckClick" }),
     }),
     ui.column({ key = "arm", width = W, height = H, align = "end", justify = "start" }, {
       ui.row({ gap = -ARM_W }, arms),
@@ -169,7 +175,7 @@ local function render()
   if showInfo then
     children[#children + 1] = ui.column({ key = "info", width = BODY, height = 64, gap = 6, align = "center",
       opacity = infoT }, {
-      ui.spacer({ height = 14 * (1 - infoT) }),
+      ui.spacer({ height = 14 * (1 - infoT), flexGrow = 0 }),
       ui.label({
         text = live and mpris.title or "silence",
         fontFamily = sans,
@@ -180,7 +186,7 @@ local function render()
         textAlign = "center",
       }),
       ui.label({
-        text = live and string.upper(mpris.artist) or "NOTHING ON THE PLATTER",
+        text = live and string.lower(mpris.artist) or "nothing on the platter",
         fontFamily = mono,
         fontSize = 11,
         color = live and (accent .. "/0.9") or "on_surface/0.3",
@@ -229,6 +235,10 @@ function update()
   mpris.tick()
   render()
   setInterval(moving() and FAST or SLOW)
+end
+
+function onDeckClick()
+  mpris.toggle()
 end
 
 mpris.subscribe(function()

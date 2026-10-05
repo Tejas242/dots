@@ -1,61 +1,28 @@
 #!/usr/bin/env python3
-"""Nocturne — a dark editorial lockscreen for Noctalia (1366x768, eDP-1).
+"""Nocturne — a lockscreen for Noctalia in screenager.dev's clothes (1366x768, eDP-1).
 
-Left column: weekday, time, date, greeting and password on one margin.
-Right: the Turntable plugin (spinning album-art vinyl + tonearm), haloed by the
-ring visualizer, over a sparse star field.
-Usage: nocturne.py <settings.toml>   (rewrites [lockscreen] + [lockscreen_widgets])
+Background: the site's pixel-art night (tools/render_night.sh -> assets/night.png),
+shown crisp as the lock screen's own wallpaper.
+Corners: the site's chrome; a typed "~ locked" path top-left, the battery top-right.
+Left column: time tower, then a greeting and the password field dressed as a key,
+all on one margin. Right: the Turntable record, haloed by the ring visualizer.
+Usage: nocturne_layout.py <settings.toml>   (rewrites [lockscreen] + [lockscreen_widgets])
+
+The key is drawn around Noctalia's own login box, so it leans on the compact
+layout's geometry (input inset 16 px, 38 px tall, 240x70 minimum panel). After a
+Noctalia update, open the lockscreen editor or lock once and check the key still
+meets the field; if not, update PILL_* here and in login.luau.
 """
-import math, pathlib, random, re, sys
+import pathlib, re, sys
 
 OUT, W, H = "eDP-1", 1366, 768
-RSCALE = 0.88  # Noctalia multiplies background_radius by ui_scale
-SERIF, SERIF_I = "Nocturne Serif", "Nocturne Serif Italic"
-THIN, MONO = "Nocturne Sans Thin", "Nocturne Mono"
+NIGHT = pathlib.Path(__file__).resolve().parent.parent / "assets" / "night.png"
 widgets = []
 
 
 def add(type_, cx, cy, w, h, rot=0.0, wid=None, **s):
     widgets.append((wid, type_, cx, cy, w, h, rot, s))
 
-
-def shape(cx, cy, w, h, color, opacity=1.0, radius=None, rot=0.0):
-    """Blank label whose background tile is the shape."""
-    r = min(w, h) / 2 / RSCALE + 1 if radius is None else radius
-    add("label", cx, cy, w, h, rot, title=" ", shadow=False, opacity=0.0, background=True,
-        background_color=color, background_opacity=opacity,
-        background_radius=int(math.ceil(r)), background_padding=0)
-
-
-def disc(cx, cy, d, color, opacity=1.0):
-    shape(cx, cy, d, d, color, opacity)
-
-
-def text(type_, x, cy, w, h, color, font, start=True, **kw):
-    """Text block; x is the left edge when start=True, else the centre."""
-    add(type_, x + w / 2 if start else x, cy, w, h, color=color, font_family=font, shadow=False,
-        background=False, **kw)
-
-
-def clock(x, cy, w, h, fmt, color, font, **kw):
-    text("clock", x, cy, w, h, color, font, clock_style="digital", format=fmt, center_text=False, **kw)
-
-
-def twinkle(cx, cy, size, color="on_surface", opacity=0.85):
-    shape(cx, cy, size, 1.5, color, opacity, 1)
-    shape(cx, cy, 1.5, size, color, opacity, 1)
-    disc(cx, cy, 4, color, opacity)
-
-
-# ═════════════ night sky ═════════════
-random.seed(7)
-for sx, sy in [(470, 92), (556, 168), (612, 64), (700, 128), (742, 236), (520, 300), (640, 352),
-               (588, 470), (720, 520), (812, 90), (900, 150), (1240, 96), (1300, 220), (1268, 560),
-               (380, 120), (300, 520), (450, 640), (1120, 690), (1320, 420), (660, 660), (80, 120)]:
-    disc(sx, sy, random.choice((2, 2, 3, 3, 4)), "on_surface", round(random.uniform(0.25, 0.7), 2))
-twinkle(664, 196, 18)
-twinkle(560, 560, 12, "primary", 0.9)
-twinkle(1300, 300, 14, "tertiary", 0.9)
 
 # ═════════════ RIGHT · turntable ═════════════
 RX, RY = 984, 372                                         # record centre on screen
@@ -67,29 +34,41 @@ add("screenager/turntable:record", RX - 180 + 220, RY - 180 + 214, 440, 428,
     show_info=True, accent="primary", background=False)
 
 # ═════════════ LEFT · time column ═════════════
-# One compact block, vertically centred on the record (RY): status line, time,
-# date, then the password pill with a quiet caption. One sans family throughout.
-import os
-TIME_FONT = os.environ.get("TIME_FONT", "Nocturne Sans ExtraLight")
+# Two plugin widgets on one left margin X, and the stock login box laid exactly
+# over the key widget's blade. Sizes are the widgets' natural sizes, so the host
+# never rescales them (keep in sync with clock.luau / login.luau).
 X = 120
-# animated time column (Turntable plugin): weekday, rolling digits, seconds hairline,
-# date and a typed greeting; natural size 460x312, left edge at X
-# typographic tower (Turntable plugin): stacked hairline/black time, seconds-meter
-# divider, rail with am/pm, calendar block and battery cell, typed greeting.
-# Natural size 313x419; centred vertically on the record together with the login.
-CW, CH = 313, 419
-CTOP = RY - (CH + 14 + 52) // 2
-add("screenager/turntable:clock", X + CW / 2, CTOP + CH / 2, CW, CH, greeting="welcome back, screenager",
-    accent="primary", background=False)
-add("login_box", X + 128, CTOP + CH + 14 + 26, 288, 52, wid=f"lockscreen-login-box@{OUT}", layout="compact",
-    show_login_button=False, show_unlock_hint=False, show_caps_lock=True, show_keyboard_layout=True,
-    show_session_buttons=False, show_media=False, show_weather=False, input_opacity=0.35,
-    input_radius=26, center_password_text=False, background_color="surface_variant",
-    background_opacity=0.0, background_radius=26)
+CAP_TOP = RY - 159                # hours cap line on screen: level with the record's top edge
 
-for i, c in enumerate(("primary", "secondary", "tertiary")):  # footer signature
-    disc(X + 4 + i * 14, 716, 7, c)
-clock(X + 52, 716, 120, 14, "WEEK {:%V}", "on_surface_variant", MONO)
+# time tower: 377x336, hours caps 76 px below its top; black digits ink ~5 px in
+CW, CH, C_CAP, C_INK = 377, 336, 76, 5
+ROW, CAP = 117.6 + 14, 117.6
+ctop = CAP_TOP - C_CAP
+add("screenager/turntable:clock", X - C_INK + CW / 2, ctop + CH / 2, CW, CH, accent="primary", background=False)
+BASELINE = CAP_TOP + ROW + CAP    # minutes baseline on screen
+
+# key: greeting + bow/neck/bits around the field; 372x133, greeting caps 11 px below
+# its top, the field centred 100 px below its top and starting 58 px in. The gap
+# between greeting and field is where Noctalia puts its status line (wrong
+# password, caps lock): 8 px + a 38 px strip above the 70 px login box.
+KW, KH, K_GREET, K_CY, PILL_X, PILL_W = 372, 133, 11, 100, 58, 314
+ktop = BASELINE + 26 - K_GREET
+add("screenager/turntable:login", X + KW / 2, ktop + KH / 2, KW, KH, greeting="auto", name="screenager",
+    background=False)
+# compact login box: input inset 16 px all round, 38 px tall; 4 px corners like the bow
+add("login_box", X + PILL_X - 16 + (PILL_W + 32) / 2, ktop + K_CY, PILL_W + 32, 70,
+    wid=f"lockscreen-login-box@{OUT}", layout="compact", show_session_buttons=False, show_media=False,
+    show_weather=False, show_unlock_hint=False, show_login_button=False, show_caps_lock=True,
+    show_keyboard_layout=True, input_opacity=0.35, input_radius=4,
+    center_password_text=False, background_color="surface_variant", background_opacity=0.0,
+    background_radius=4)
+
+# ═════════════ corners · the site's chrome ═════════════
+GUTTER, CORNER_Y = 40, 35
+PW, PH = 260, 20                  # path: left-anchored
+add("screenager/turntable:path", GUTTER + PW / 2, CORNER_Y, PW, PH, background=False)
+BW, BH = 220, 20                  # battery: right-anchored
+add("screenager/turntable:battery", W - GUTTER - BW / 2, CORNER_Y, BW, BH, accent="primary", background=False)
 
 
 # ── emit ──
@@ -118,7 +97,9 @@ for wid, type_, cx, cy, w, h, rot, s in widgets:
     b += [f"        {k} = {val(v)}" for k, v in sorted(s.items())]
     blocks.append("\n".join(b))
 
-lock = ("[lockscreen]\nblur_intensity = 0.85\ntint_intensity = 0.82\n"
+# the night is pixel art: no blur, no tint
+lock = ("[lockscreen]\nblur_intensity = 0.0\ntint_intensity = 0.0\n"
+        f"wallpaper = {val(str(NIGHT))}\n"
         "transition = [ \"disc\" ]\ntransition_duration = 950.0\nedge_smoothness = 0.45\n\n")
 section = ["[lockscreen_widgets]", "enabled = true", "schema_version = 2", "widget_order = ["]
 section.append(",\n".join(f'    "{i}"' for i in ids))
