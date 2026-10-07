@@ -47,3 +47,12 @@ for pkg in "${selected[@]}"; do
   done
   echo "synced  $pkg"
 done
+
+# The repo is public: keep the home city and the personal email out of it.
+NOREPLY="59790915+Tejas242@users.noreply.github.com"
+if [ -f "$REPO/git/.gitconfig" ]; then
+  sed -i -E "s/^(\s*email = ).*/\1$NOREPLY/" "$REPO/git/.gitconfig"
+fi
+if [ -f "$REPO/noctalia/.config/noctalia/services.toml" ]; then
+  sed -i -E 's/^(address\s*=\s*).*/\1""/' "$REPO/noctalia/.config/noctalia/services.toml"
+fi
