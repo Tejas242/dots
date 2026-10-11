@@ -1,11 +1,25 @@
     layout {
-        gaps 4 // Gap between windows
+        gaps 6 // Gap between windows: room for the rounded corners to read
         center-focused-column "never" // Don’t auto-center focused column
 
         background-color "transparent" // <- needed for noctalia-shell to set wallpaper
-	    focus-ring {
-		    width 1
-	    }
+        // One soft 1px border in the palette colour (noctalia.kdl sets the
+        // colours) instead of a hard focus ring: matches the glass bar.
+        focus-ring {
+            off
+        }
+        border {
+            width 1
+        }
+        // Floating windows lift off the wallpaper a little.
+        shadow {
+            on
+            softness 28
+            spread 2
+            offset x=0 y=6
+            color "#00000066"
+            inactive-color "#00000040"
+        }
 
         preset-column-widths {
             proportion 0.33333

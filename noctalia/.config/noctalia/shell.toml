@@ -13,7 +13,11 @@ ui_scale = 0.88
 
 # ── Shell ────────────────────────────────────────────────────
 [shell]
-font_family          = "Roboto"
+niri_overview_type_to_launch_enabled = true
+password_style         = "random"
+polkit_agent           = true
+screen_time_enabled    = true
+font_family          = "Geist"   # same face as the Ember island
 time_format          = "{:%I:%M %p}"
 date_format          = "%A, %x"
 clipboard_enabled    = true
@@ -27,7 +31,7 @@ settings_show_advanced = true
 
     # ── Panels (control-center, launcher, session, etc.) ─────
     [shell.panel]
-    transparency_mode      = "solid"
+    transparency_mode      = "glass"   # frosted, over niri blur
     borders                = true
     shadow                 = true
     floating_offset        = 6
@@ -116,3 +120,20 @@ width           = 560
 
     [[control_center.shortcuts]]
     type = "power_profile"
+
+
+# ── Glass, everywhere ───────────────────────────────────────────
+# Notifications and OSDs match the bar and panels.
+[notification]
+background_opacity = 0.6
+
+[osd]
+background_opacity = 0.6
+position           = "bottom_center"
+
+    [shell.launcher.providers.emoji]
+    global = true
+
+    [shell.screenshot]
+    confirm_region = true
+    directory      = "~/Pictures/Screenshots"

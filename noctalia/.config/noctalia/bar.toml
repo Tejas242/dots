@@ -11,53 +11,44 @@ order = ["default"]
     position = "top"
 
     # ── Geometry ─────────────────────────────────────────────
-    # 28px is the sweet spot on 768p: room for 14px icons + text
-    # without eating into workspace. Zero margins = flush to edges.
-    thickness      = 28
-    padding        = 6
-    widget_spacing = 6
-    margin_edge          = 0      # flush to top screen edge
-    margin_ends          = 0      # flush to left/right screen edges
+    # 22px: compact on a 768px screen, still room for text.
+    # Flush to every edge; the island (Ember) hangs from the
+    # middle of it, so the bar itself stays square.
+    thickness      = 22
+    padding        = 8
+    widget_spacing = 4
+    scale          = 1.0
+    margin_edge          = 0
+    margin_ends          = 0
     margin_opposite_edge = 0
-
-    # ── Corners & Edges ──────────────────────────────────────
-    # All zero = seamless bar welded to the top edge
-    radius              = 0
-    radius_top_left     = 0
-    radius_top_right    = 0
-    radius_bottom_left  = 0
-    radius_bottom_right = 0
+    radius               = 0
     concave_edge_corners = false
 
-    # ── Surface ──────────────────────────────────────────────
-    background_opacity = 0.65     # let blur show through — macOS menu bar sits ~0.60–0.70
+    # ── Glass ────────────────────────────────────────────────
+    # Translucent over niri's blur (rules.kdl). No border, no
+    # shadow: the bar is a frosted strip, not a box.
+    background_opacity = 0.55
     border             = "outline"
-    border_width       = 0.0      # effectively invisible
+    border_width       = 0.0
     shadow             = false
     contact_shadow     = false
     capsule            = false
 
-    # ── Behavior ─────────────────────────────────────────────
-    font_weight    = 500          # medium — clean, not shouty
-    scale          = 1.0
-    layer          = "top"
-    reserve_space  = true
-    auto_hide      = false
+    # ── Type & behaviour ─────────────────────────────────────
+    font_weight     = 500
+    layer           = "top"
+    reserve_space   = true
+    auto_hide       = false
     hover_highlight = true
     show_on_workspace_switch = true
-    panel_overlap  = 1
+    panel_overlap   = 1
 
-    # ── Widget layout ────────────────────────────────────────
-    #
-    #  ┌─ LEFT ──────────────┬─── CENTER ───┬──────────── RIGHT ─┐
-    #  │ 🔍 ⟡ ⟡ ⟡  ◀ title │   1  2  3  4 │ ♫  ▣  ⚡ 🔊 🔋 ⚙  │
-    #  │ launcher+workspaces │   (clock)    │ status cluster     │
-    #  └─────────────────────┴──────────────┴────────────────────┘
-    #
-    #  Left  = navigation (launcher → workspaces → active window)
-    #  Center = clock (the thing you glance at most)
-    #  Right  = status & controls (info flows toward the exit point)
-
-    start  = ["launcher", "workspaces", "active_window"]
-    center = ["time"]
-    end    = ["media", "tray", "cpu", "ram", "network", "output_volume", "battery", "control-center"]
+    # ── Layout ───────────────────────────────────────────────
+    #  ┌──────────────────────┬────────────────┬─────────────────────────┐
+    #  │ workspaces · window  │  (Ember island)│ stats · tools · system  │
+    #  └──────────────────────┴────────────────┴─────────────────────────┘
+    #  Center is empty on purpose: Ember (~/Gems/ember) draws the
+    #  clock, music and Claude there as a dynamic island.
+    start  = ["workspaces", "active_window"]
+    center = []
+    end    = ["cpu", "ram", "tray", "recorder", "picker", "clipboard", "network", "output_volume", "battery", "control-center"]

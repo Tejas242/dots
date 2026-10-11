@@ -1,5 +1,5 @@
     window-rule {
-        geometry-corner-radius 0 // Set every window radius to 0
+        geometry-corner-radius 10 // same radius family as panels and the island
         clip-to-geometry true
     }
 
@@ -39,6 +39,15 @@ window-rule {
     match title="Sticky Note"
     open-floating true
     default-floating-position x=32 y=32 relative-to="bottom-right"
+}
+
+/* Ember, the island: it publishes its own blur region (ext-background-effect). */
+layer-rule {
+  match namespace="^ember$"
+  background-effect {
+    blur true
+    xray false
+  }
 }
 
 layer-rule {

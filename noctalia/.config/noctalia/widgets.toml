@@ -4,42 +4,72 @@
 # ║  Only widgets that need non-default values are listed.     ║
 # ╚══════════════════════════════════════════════════════════════╝
 
-# ── Clock ────────────────────────────────────────────────────
-# Centered in the bar. Compact 12h format without seconds.
-[widget.time]
-type   = "clock"
-format = "{:%I:%M %p}"
+# ── Workspaces ───────────────────────────────────────────────
+# Slim pills; the focused one stretches. Primary for focus,
+# muted for the rest, so the eye lands on where you are.
+[widget.workspaces]
+type               = "workspaces"
+style              = "regular"
+pill_scale         = 0.8
+active_pill_size   = 2.4
+focused_color      = "primary"
+occupied_color     = "on_surface_variant"
+empty_color        = "outline"
 
 
 # ── Active Window ────────────────────────────────────────────
-# Shows what's focused. Truncated to ~180px so it never pushes
-# workspaces off-center on a 1366px screen.
+# What's focused. Capped so it never reaches the island.
 [widget.active_window]
 type         = "active_window"
-icon_size    = 14.0
-max_length   = 180.0
+icon_size    = 13.0
+max_length   = 200.0
 min_length   = 40.0
 title_scroll = "on_hover"
 
 
-# ── Media (MPRIS) ───────────────────────────────────────────
-# Compact now-playing. Art kept small; title scrolls on hover
-# so it doesn't steal space from the status cluster.
-[widget.media]
-type         = "media"
-art_size     = 14.0
-max_length   = 160.0
-min_length   = 40.0
-title_scroll = "on_hover"
-
-
-# ── System Monitor ──────────────────────────────────────────
-# Two compact stats: CPU% and RAM%. Enough for a quick health
-# check without opening btop. Temp removed to save bar space.
+# ── System Monitor ───────────────────────────────────────────
+# CPU% and RAM as quiet numbers; they tint toward error only
+# when something is actually busy.
 [widget.cpu]
-type = "sysmon"
-stat = "cpu_usage"
+type            = "sysmon"
+stat            = "cpu_usage"
+visualization   = "none"
+label_min_width = 26
 
 [widget.ram]
-type = "sysmon"
-stat = "ram_used"
+type            = "sysmon"
+stat            = "ram_used"
+visualization   = "none"
+label_min_width = 34
+
+
+# ── Tray ─────────────────────────────────────────────────────
+# One button; apps live in a drawer instead of the bar.
+[widget.tray]
+type   = "tray"
+drawer = true
+
+
+# ── Tools ────────────────────────────────────────────────────
+[widget.recorder]
+type = "noctalia/screen_recorder:recorder"
+
+[widget.picker]
+type = "oldirtty/color_picker:widget"
+
+
+# ── Network / Volume / Battery ───────────────────────────────
+# Glyphs only; the percentage stays on the battery.
+[widget.network]
+type       = "network"
+show_label = false
+
+[widget.output_volume]
+type       = "volume"
+show_label = false
+
+[widget.battery]
+type          = "battery"
+display_mode  = "glyph"
+show_label    = true
+label_content = "percent"

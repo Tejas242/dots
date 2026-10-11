@@ -3,22 +3,6 @@ config_version = 15
 [audio]
 enable_sounds = true
 
-[backdrop]
-blur_intensity = 0.59999998658895493
-enabled = true
-
-[bar.default]
-background_opacity = 0.59999998658895493
-center = [ "workspaces", "disc" ]
-contact_shadow = true
-end = [ "tray", "status", "recorder", "widget", "clipboard", "network", "output_volume", "battery" ]
-font_weight = 400
-hover_highlight = false
-scale = 0.90000000596046448
-shadow = true
-start = [ "time", "sysmon", "spacer_2", "active_window" ]
-thickness = 18
-
 [battery]
 warning_threshold = 20
 
@@ -210,40 +194,8 @@ widget_order = [
         accent = "primary"
         background = false
 
-[notification]
-background_opacity = 0.59999998658895493
-
-[osd]
-background_opacity = 0.59999998658895493
-position = "bottom_center"
-
 [plugins]
 enabled = [ "oldirtty/color_picker", "noctalia/screen_recorder", "screenager/turntable" ]
-
-[shell]
-niri_overview_type_to_launch_enabled = true
-password_style = "random"
-polkit_agent = true
-screen_time_enabled = true
-
-    [shell.launcher.providers.emoji]
-    global = true
-
-    [shell.panel]
-    transparency_mode = "glass"
-
-    [shell.screenshot]
-    confirm_region = true
-    directory = "~/Pictures/Screenshots"
-
-[theme]
-mode = "dark"
-source = "wallpaper"
-wallpaper_scheme = "m3-content"
-
-    [theme.templates]
-    builtin_ids = [ "alacritty", "btop", "cava", "gtk3", "gtk4", "niri", "qt" ]
-    community_ids = [ "claude-code", "codex", "zen-browser", "obsidian", "vscode", "zed", "fastfetch", "zathura" ]
 
 [wallpaper]
 transition_on_startup = true
@@ -256,35 +208,3 @@ transition_on_startup = true
 
     [wallpaper.monitors.eDP-1]
     path = "/home/screenager/Pictures/Wallpapers/aesthetic-wallpapers-main/images/guy_sleeping_colored.png"
-
-[widget.disc]
-size = 18
-type = "screenager/turntable:disc"
-
-[widget.media]
-hide_album_art = true
-hide_when_no_media = true
-
-[widget.network]
-show_label = false
-
-[widget.output_volume]
-show_label = false
-
-[widget.recorder]
-type = "noctalia/screen_recorder:recorder"
-
-[widget.spacer_2]
-type = "spacer"
-
-[widget.status]
-type = "goodroot/noctwhspr:status"
-
-[widget.tray]
-drawer = true
-
-[widget.widget]
-type = "oldirtty/color_picker:widget"
-
-[widget.workspaces]
-pill_scale = 0.90000000000000002

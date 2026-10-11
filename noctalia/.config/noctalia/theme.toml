@@ -7,13 +7,15 @@
 [theme]
 mode              = "dark"
 source            = "wallpaper"
-wallpaper_scheme  = "m3-fruit-salad"
+wallpaper_scheme  = "m3-content"
 builtin           = "Noctalia"
 community_palette = "Oxocarbon"
 pure_black_dark   = false
 
     # ── Built-in template engines ────────────────────────────
     [theme.templates]
+    builtin_ids   = ["alacritty", "btop", "cava", "gtk3", "gtk4", "niri", "qt"]
+    community_ids = ["claude-code", "codex", "zen-browser", "obsidian", "vscode", "zed", "fastfetch", "zathura"]
     enable_builtin_templates    = true
     enable_community_templates  = true
 
@@ -49,3 +51,10 @@ edge_smoothness     = 0.3
 
     [wallpaper.default]
     path = "/home/screenager/Pictures/Wallpapers/aesthetic-wallpapers-main/images/anime-chick.jpg"
+
+
+# ── Backdrop ─────────────────────────────────────────────────
+# Blurred wallpaper behind overview / panels.
+[backdrop]
+enabled        = true
+blur_intensity = 0.6
