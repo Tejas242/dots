@@ -27,6 +27,13 @@ scale              = 0.9
 background_opacity = 0.95
 border             = true
 
+# Ember shows these in the island at the top; Noctalia keeps the rest.
+[osd.kinds]
+volume_output = false
+volume_input  = false
+brightness    = false
+media         = false
+
 
 # ── Night Light ──────────────────────────────────────────────
 [nightlight]

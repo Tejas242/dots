@@ -73,3 +73,12 @@ type          = "battery"
 display_mode  = "glyph"
 show_label    = true
 label_content = "percent"
+
+
+# ── Calendar ─────────────────────────────────────────────────
+# The date where the Control Center owl used to be; click it for
+# the calendar. Ember at the centre keeps the time.
+[widget.calendar]
+type           = "clock"
+format         = "{:%a %d %b}"
+tooltip_format = "{:%A, %d %B %Y}"
