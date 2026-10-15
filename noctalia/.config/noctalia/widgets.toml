@@ -76,9 +76,12 @@ label_content = "percent"
 
 
 # ── Calendar ─────────────────────────────────────────────────
-# The date where the Control Center owl used to be; click it for
-# the calendar. Ember at the centre keeps the time.
+# An icon in the far-left corner; click it for the calendar.
+# Ember at the centre keeps the time.
 [widget.calendar]
-type           = "clock"
-format         = "{:%a %d %b}"
-tooltip_format = "{:%A, %d %B %Y}"
+type    = "custom_button"
+glyph   = "calendar"
+tooltip = "Calendar"
+
+[widget.calendar.actions]
+left = "panel-toggle control-center calendar"

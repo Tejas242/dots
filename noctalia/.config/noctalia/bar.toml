@@ -49,6 +49,6 @@ order = ["default"]
     #  └──────────────────────┴────────────────┴─────────────────────────┘
     #  Center is empty on purpose: Ember (~/Gems/ember) draws the
     #  clock, music and Claude there as a dynamic island.
-    start  = ["workspaces", "active_window"]
+    start  = ["calendar", "workspaces", "active_window"]
     center = []
-    end    = ["cpu", "ram", "tray", "recorder", "picker", "clipboard", "network", "output_volume", "battery", "calendar"]
+    end    = ["cpu", "ram", "tray", "recorder", "picker", "clipboard", "network", "output_volume", "battery"]
