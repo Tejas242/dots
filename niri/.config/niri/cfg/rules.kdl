@@ -1,5 +1,5 @@
     window-rule {
-        geometry-corner-radius 10 // same radius family as panels and the island
+        geometry-corner-radius 4 // very slight rounding
         clip-to-geometry true
     }
 
