@@ -1,7 +1,25 @@
 # ╔══════════════════════════════════════════════════════════════╗
-# ║  bar.toml — Bar appearance and widget arrangement          ║
-# ║  Optimized for 1366×768 · edge-to-edge · compact density   ║
+# ║  bar.toml — The frame around Ember                         ║
+# ║  1366×768 · edge-to-edge glass · one ink, one rhythm        ║
 # ╚══════════════════════════════════════════════════════════════╝
+#
+#  ┌────────────────┬──────────────────┬──────────────────────────────┐
+#  │ ▬ • •   ▦      │   (Ember island) │ ▭   ◔ 34%  ▣ 56%   ᯤ ◁) ▭ 48% │
+#  │ where you are  │  what's happening│ tools · machine · connection │
+#  └────────────────┴──────────────────┴──────────────────────────────┘
+#
+#  The bar is the frame and Ember is the picture: it stays quiet so
+#  the island can be alive. Rules:
+#   · one ink: icons on_surface_variant, numbers on_surface;
+#     colour only means something (primary = you are here,
+#     error = busy CPU, recording, low battery)
+#   · one rhythm: 5 px between items, 18 px between groups
+#     (5 + a 8 px spacer + 5), 10 px ends like Ember's
+#   · no capsules: nothing is boxed, so no gaps between pills
+#
+#  Config-only on purpose: Noctalia never rewrites files in
+#  ~/.config/noctalia, so this survives updates. Keep GUI bar
+#  edits out of ~/.local/state/noctalia/settings.toml (it wins).
 
 [bar]
 order = ["default"]
@@ -11,12 +29,10 @@ order = ["default"]
     position = "top"
 
     # ── Geometry ─────────────────────────────────────────────
-    # 22px: compact on a 768px screen, still room for text.
-    # Flush to every edge; the island (Ember) hangs from the
-    # middle of it, so the bar itself stays square.
+    # 22 px: Ember reads this thickness and hangs from it.
     thickness      = 22
-    padding        = 8
-    widget_spacing = 4
+    padding        = 10
+    widget_spacing = 5
     scale          = 1.0
     margin_edge          = 0
     margin_ends          = 0
@@ -26,7 +42,7 @@ order = ["default"]
 
     # ── Glass ────────────────────────────────────────────────
     # Translucent over niri's blur (rules.kdl). No border, no
-    # shadow: the bar is a frosted strip, not a box.
+    # shadow: a frosted strip, not a box.
     background_opacity = 0.55
     border             = "outline"
     border_width       = 0.0
@@ -34,21 +50,35 @@ order = ["default"]
     contact_shadow     = false
     capsule            = false
 
-    # ── Type & behaviour ─────────────────────────────────────
+    # ── Ink & type ───────────────────────────────────────────
+    icon_color      = "on_surface_variant"
     font_weight     = 500
+
+    # ── Behaviour ────────────────────────────────────────────
     layer           = "top"
     reserve_space   = true
     auto_hide       = false
-    hover_highlight = true
+    hover_highlight = false
     show_on_workspace_switch = true
     panel_overlap   = 1
 
     # ── Layout ───────────────────────────────────────────────
-    #  ┌──────────────────────┬────────────────┬─────────────────────────┐
-    #  │ workspaces · window  │  (Ember island)│ stats · tools · system  │
-    #  └──────────────────────┴────────────────┴─────────────────────────┘
-    #  Center is empty on purpose: Ember (~/Gems/ember) draws the
-    #  clock, music and Claude there as a dynamic island.
-    start  = ["calendar", "workspaces", "active_window"]
+    # Center is empty on purpose: Ember (~/Gems/ember) draws
+    # the time, music and Claude there.
+    start  = ["workspaces", "gap", "calendar"]
     center = []
-    end    = ["cpu", "ram", "tray", "recorder", "picker", "clipboard", "network", "output_volume", "battery"]
+    end    = ["group:tools", "gap", "cpu", "ram", "gap", "network", "output_volume", "battery"]
+
+    # ── Tools fold into the recorder ─────────────────────────
+    # Only the recorder shows (it turns red while recording);
+    # hover it and the picker, clipboard and tray unfold to
+    # its left. Invisible capsule: no pill, no padding.
+    [[bar.default.capsule_group]]
+    id                  = "tools"
+    members             = ["tray", "picker", "clipboard", "recorder"]
+    accordion           = true
+    accordion_direction = "start"
+    fill                = "surface"
+    opacity             = 0.0
+    padding             = 0
+    widget_spacing      = 5

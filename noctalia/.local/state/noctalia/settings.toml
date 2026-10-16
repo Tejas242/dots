@@ -3,6 +3,7 @@ config_version = 15
 [audio]
 enable_sounds = true
 
+
 [battery]
 warning_threshold = 20
 

@@ -5,31 +5,43 @@
 # ╚══════════════════════════════════════════════════════════════╝
 
 # ── Workspaces ───────────────────────────────────────────────
-# Slim pills; the focused one stretches. Primary for focus,
-# muted for the rest, so the eye lands on where you are.
+# A page indicator, no numbers: the long pill is where you are,
+# a light dot has windows, a dim dot is empty. The long pill
+# stretches and glides when you switch.
 [widget.workspaces]
 type               = "workspaces"
 style              = "regular"
-pill_scale         = 0.8
-active_pill_size   = 2.4
+show_labels        = false
+pill_scale         = 0.55
+active_pill_size   = 3.0
+inactive_pill_size = 1.0
 focused_color      = "primary"
 occupied_color     = "on_surface_variant"
 empty_color        = "outline"
 
 
-# ── Active Window ────────────────────────────────────────────
-# What's focused. Capped so it never reaches the island.
-[widget.active_window]
-type         = "active_window"
-icon_size    = 13.0
-max_length   = 200.0
-min_length   = 40.0
-title_scroll = "on_hover"
+# ── Calendar ─────────────────────────────────────────────────
+# Beside the workspaces; click it for the calendar.
+# Ember at the centre keeps the time.
+[widget.calendar]
+type    = "custom_button"
+glyph   = "calendar"
+tooltip = "Calendar"
+
+[widget.calendar.actions]
+left = "panel-toggle control-center calendar"
+
+
+# ── Group gap ────────────────────────────────────────────────
+# 5 + 8 + 5 = 18 px between groups.
+[widget.gap]
+type   = "spacer"
+length = 8
 
 
 # ── System Monitor ───────────────────────────────────────────
-# CPU% and RAM as quiet numbers; they tint toward error only
-# when something is actually busy.
+# CPU and RAM in the same unit and the same width, so they
+# never jitter; they tint toward error only when busy.
 [widget.cpu]
 type            = "sysmon"
 stat            = "cpu_usage"
@@ -38,24 +50,21 @@ label_min_width = 26
 
 [widget.ram]
 type            = "sysmon"
-stat            = "ram_used"
+stat            = "ram_pct"
 visualization   = "none"
-label_min_width = 34
+label_min_width = 26
 
 
-# ── Tray ─────────────────────────────────────────────────────
-# One button; apps live in a drawer instead of the bar.
+# ── Tools (folded into the recorder, see bar.toml) ──────────
 [widget.tray]
 type   = "tray"
 drawer = true
 
-
-# ── Tools ────────────────────────────────────────────────────
-[widget.recorder]
-type = "noctalia/screen_recorder:recorder"
-
 [widget.picker]
 type = "oldirtty/color_picker:widget"
+
+[widget.recorder]
+type = "noctalia/screen_recorder:recorder"
 
 
 # ── Network / Volume / Battery ───────────────────────────────
@@ -73,15 +82,3 @@ type          = "battery"
 display_mode  = "glyph"
 show_label    = true
 label_content = "percent"
-
-
-# ── Calendar ─────────────────────────────────────────────────
-# An icon in the far-left corner; click it for the calendar.
-# Ember at the centre keeps the time.
-[widget.calendar]
-type    = "custom_button"
-glyph   = "calendar"
-tooltip = "Calendar"
-
-[widget.calendar.actions]
-left = "panel-toggle control-center calendar"
