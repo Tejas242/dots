@@ -9,22 +9,55 @@
 <br>
 <br>
 
-<img src="docs/desktop.png" alt="A dark green desktop at 1366×768: an 18px bar along the top, Neovim's start screen on the left, fastfetch and cava stacked on the right, square corners and 4px gaps." width="100%">
+<img src="docs/desktop.png" alt="A dark green desktop at 1366×768: a thin glass bar along the top with a workspace indicator on the left, a small island in the middle and quiet status on the right; Neovim's start screen on the left, fastfetch and cava stacked on the right, 4px corners and 6px gaps." width="100%">
 
-<sub>workspace 2 · neovim, fastfetch, cava · 1366×768 · every colour taken from the wallpaper</sub>
+<sub>workspace 3 · neovim, fastfetch, cava · 1366×768 · every colour taken from the wallpaper</sub>
 
 <br>
 <br>
 
 A scrollable-tiling Wayland desktop for a two-core laptop with a small screen.<br>
 Noctalia reads a palette off the wallpaper and writes it into everything else.<br>
-The lock screen plays records.
+The bar keeps quiet. The lock screen plays records.
 
 <br>
 
 <img src="docs/rule.svg" width="240" alt="">
 
 </div>
+
+<br>
+
+## the bar
+
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/bar.png">
+  <img src="docs/bar.gif" alt="The bar's left, centre and right at 2×: the long green workspace pill glides from one workspace to the next and back, then the pointer rests on the camera icon and the colour picker and clipboard slide out to its left." width="100%">
+</picture>
+
+<sub>left · centre · right at 2× · switching workspaces, then hovering the recorder · a real recording</sub>
+
+A 22px strip of glass that stays out of the way, so the island in the middle can be the one live thing at the top of the screen.
+
+- **workspaces** — a page indicator instead of numbers. The long pill is where you are, a light dot has windows, a dim dot is empty. The pill stretches and glides when you switch.
+- **tools** — the colour picker, clipboard and tray fold into the screen recorder and slide out when you hover it. The recorder stays visible because it turns red while it records.
+- **one ink** — icons sit a step quieter than numbers. Colour always means something: green is where you are, red is a busy CPU, a recording or a low battery.
+- **one rhythm** — 5px between items, 18px between groups (tools · machine · connection), 10px at the ends. Nothing is boxed in a pill.
+- **the middle** — empty on purpose. The island there is Ember, a separate project that isn't in this repo.
+- **updates** — built only from Noctalia's own config keys, with no patches. Noctalia never rewrites `~/.config/noctalia`, so the bar survives updates.
+
+<br>
+
+## moving around
+
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/moving.png">
+  <img src="docs/moving.gif" alt="A new terminal column opens on the right and the whole strip of windows scrolls left to make room, then scrolls back to Neovim, and the launcher opens over a frosted blur." width="100%">
+</picture>
+
+<sub>a new column scrolls the strip · back to the first column · the launcher over blur · a real recording</sub>
+
+niri lays windows out on an endless horizontal strip, so opening one never squeezes the others: the strip scrolls instead. Its springs are stiff and critically damped, so motion is quick and never wobbles, and everything behind glass is blurred.
 
 <br>
 
@@ -43,7 +76,7 @@ The lock screen plays records.
 - **sky** — [screenager.dev](https://screenager.dev)'s pixel-art night, rendered by the site's own generator at exactly 1366×768.
 - **cost** — ~30 updates a second while something moves, one a second when nothing does.
 
-The same record, 18px wide, spins in the middle of the bar. Left click plays or pauses, right click skips, middle click goes back.
+The plugin also ships `disc`, the same record 18px wide for a bar. Left click plays or pauses, right click skips, middle click goes back. This setup leaves it off, since the island shows the music.
 
 <details>
 <summary>rebuild the layout or the artwork</summary>
@@ -85,8 +118,8 @@ Each folder mirrors `$HOME`.
 
 | package | |
 | :-- | :-- |
-| **`niri`** | Compositor config split into `cfg/*.kdl`. 4px gaps, square corners, a 1px focus ring, blur behind windows. `noctalia.kdl` is generated. |
-| **`noctalia`** | Shell: an 18px bar, launcher, panels, notifications, idle and lid handling, theme templates. Includes the GUI-edited `settings.toml`. |
+| **`niri`** | Compositor config split into `cfg/*.kdl`. 6px gaps, 4px corners, a 1px border in the palette colour, soft shadows, blur behind windows. `noctalia.kdl` is generated. |
+| **`noctalia`** | Shell: a 22px glass bar, launcher, panels, notifications, idle and lid handling, theme templates. Includes the GUI-edited `settings.toml`. |
 | **`turntable`** | The Noctalia plugin behind the lock screen and the bar's disc, plus its fonts (OFL). |
 | **`nvim`** | AstroNvim v6. Everforest for code, wallpaper accents for the chrome, an animated start screen, CompetiTest for contests. |
 | **`terminals`** | Alacritty (the one bound to a key), Kitty, Ghostty. Colours come from Noctalia. |
@@ -118,7 +151,9 @@ Each folder mirrors `$HOME`.
 
 <br>
 
-- **bar** — clock, CPU and the focused window on the left; workspaces and the spinning disc in the middle; tray and status on the right. 60% opacity over blur.
+- **bar** — see [the bar](#the-bar). 55% opacity over niri's blur, laid out in `bar.toml`, tuned in `widgets.toml`.
+- **settings** — the Settings window saves to `~/.local/state/noctalia/settings.toml`, which wins over the files. Bar changes belong in `bar.toml`, so the files stay the truth.
+- **pop-ups** — the volume, brightness and media OSDs are off, because the island shows them.
 - **idle** — lock at 10 min, screen off at 11, suspend at 30. Closing the lid locks and suspends.
 - **templates** — built-in: alacritty, btop, cava, gtk3, gtk4, niri, qt. Community: claude-code, codex, zen-browser, obsidian, vscode, zed, fastfetch, zathura. Own: VS Code Insiders and Neovim.
 - **state** — `noctalia-state-watch.sh` (autostarted by niri) commits every write of `settings.toml` to a local git repo in `~/.local/state/noctalia`. Needs `inotify-tools`.
@@ -147,7 +182,8 @@ On first start:
 1. Noctalia renders its templates from the wallpaper (`noctalia.kdl`, terminal themes, `nvim/lua/matugen.lua`).
 2. `nvim` bootstraps lazy.nvim and installs plugins.
 3. Wallpaper paths in `theme.toml` and `settings.toml` are absolute (`/home/screenager/…`). Point them at your own home, or pick a wallpaper in Noctalia's settings.
-4. The bar also uses three third-party Noctalia plugins that aren't in this repo: `oldirtty/color_picker`, `noctalia/screen_recorder` and `goodroot/noctwhspr`. Install them or drop them from the bar.
+4. The bar uses two third-party Noctalia plugins that aren't in this repo: `oldirtty/color_picker` and `noctalia/screen_recorder`. Install them or drop them from `bar.toml`.
+5. The middle of the bar is left empty for Ember. Without it, that stretch is plain glass.
 
 <details>
 <summary>packages</summary>
@@ -156,7 +192,7 @@ On first start:
 
 **`--deps` installs** &nbsp; `niri` `zsh` `zoxide` `neovim` `ripgrep` `fd` `git` `gcc` `rsync` `python-pillow` `python-numpy` `alacritty` `kitty` `ghostty` `fastfetch` `btop` `cava` `mangohud`, and `noctalia-git` from the AUR (via `paru` or `yay`).
 
-**used by the configs, not installed** &nbsp; `cachyos-zsh-config` `zsh-theme-powerlevel10k` `ttf-jetbrains-mono-nerd` `ttf-roboto` `inotify-tools` `brightnessctl` `zen-browser` `youtube-music` `nautilus`
+**used by the configs, not installed** &nbsp; `cachyos-zsh-config` `zsh-theme-powerlevel10k` `ttf-jetbrains-mono-nerd` `ttf-roboto` `inotify-tools` `gpu-screen-recorder` `zen-browser` `youtube-music` `nautilus`
 
 </details>
 
