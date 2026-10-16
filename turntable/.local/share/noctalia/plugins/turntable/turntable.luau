@@ -152,7 +152,7 @@ local function render()
     })
   end
 
-  local deck = ui.row({ key = "deck", gap = -BODY, align = "start" }, {
+  local stack = ui.row({ key = "stack", gap = -BODY, align = "start" }, {
     ui.column({ key = "bodyc", width = BODY, height = BODY, align = "center", justify = "center" }, {
       ui.image({ key = "body", path = "assets/body.png", width = BODY * bodyS, height = BODY * bodyS,
         opacity = bodyA }),
@@ -160,14 +160,20 @@ local function render()
     ui.column({ key = "label", width = BODY, height = BODY, align = "center", justify = "center" }, {
       ui.row({ gap = -((not dir) and LABEL or math.max(LABEL * labelS, 1)) }, labels),
     }),
-    -- the record is a play/pause button. onClick names a global (rows can't take
-    -- clicks); this layer must precede the arm, which is wider than BODY
+    ui.column({ key = "arm", width = W, height = H, align = "end", justify = "start" }, {
+      ui.row({ gap = -ARM_W }, arms),
+    }),
+  })
+
+  -- the record is a play/pause button. Hit-testing takes the topmost node and
+  -- walks up to its nearest InputArea, so the hit box must sit *above* the arm
+  -- layer (which covers the whole deck). The stack is W wide, so a -W gap puts
+  -- the hit layer back at the origin; onClick names a global.
+  local deck = ui.row({ key = "deck", width = W, height = H, gap = -W, align = "start" }, {
+    stack,
     ui.column({ key = "hit", width = BODY, height = BODY, align = "center", justify = "center" }, {
       ui.box({ width = BODY * 0.9, height = BODY * 0.9, radius = BODY * 0.45, fill = "surface/0",
         onClick = "onDeckClick" }),
-    }),
-    ui.column({ key = "arm", width = W, height = H, align = "end", justify = "start" }, {
-      ui.row({ gap = -ARM_W }, arms),
     }),
   })
 
